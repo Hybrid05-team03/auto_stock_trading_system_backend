@@ -1,13 +1,23 @@
-from rest_framework.views import APIView
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from trading.services.indicators import calculate_rsi
-from trading.services.kis_client import get_price_data  # 한투 API 래퍼
-import pandas as pd
+from trading.strategy.rsi_signal import get_trade_signal
+from trading.broker.kis_order import place_order
 
-class RSIView(APIView):
-    def get(self, request):
-        symbol = request.query_params.get('symbol', '005930')
-        df = pd.DataFrame(get_price_data(symbol))
-        df['RSI(2)'] = calculate_rsi(df)
+# rsi 지표 분석 후 매수/매도 시그널 (실시간 처리 적용 X 상태)
+@api_view(["POST"])
+def rsi_trade_view(request, symbol):
 
-        return Response(df[['date', 'close', 'RSI(2)']].tail(10).to_dict(orient='records'))
+    signal = get_trade_signal(symbol)
+    action = signal["action"]
+
+    if action == "BUY":
+        order = place_order(symbol, qty=1, side="BUY")
+        signal["order_result"] = order
+    elif action == "SELL":
+        order = place_order(symbol, qty=1, side="SELL")
+        signal["order_result"] = order
+    else:
+        signal["order_result"] = {"message": "매매 없음"}
+
+    return Response(signal)
+

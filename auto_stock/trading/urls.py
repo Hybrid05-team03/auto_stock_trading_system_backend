@@ -1,7 +1,6 @@
-# trading/urls.py
 from django.urls import path
-from trading.views import RSIView
+from trading.views import rsi_trade_view
 
 urlpatterns = [
-    path('rsi/', RSIView.as_view(), name='rsi-view'),
+    path('auto/<str:symbol>/', rsi_trade_view, name='rsi-trade'),
 ]

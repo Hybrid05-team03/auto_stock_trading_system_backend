@@ -67,7 +67,10 @@ def get_indices_payload():
         _STATE["last_payload"] = payload
         _STATE["last_at"] = now
         return payload
-    except Exception:
+    except Exception as e:
+        import traceback
+        print("[❌ ERROR get_indices_payload]", e)
+        traceback.print_exc()
         if _STATE["last_payload"]:
             return _STATE["last_payload"]
         return {"indices": []}
