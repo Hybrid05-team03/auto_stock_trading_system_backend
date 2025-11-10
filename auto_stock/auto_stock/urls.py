@@ -13,4 +13,5 @@ urlpatterns = [
 
     # common app
     path('api/', include('common.urls')),
+    path('api/market/', include('indices.urls')),
 ]

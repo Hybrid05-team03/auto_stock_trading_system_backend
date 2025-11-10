@@ -1,4 +1,6 @@
-import os, time, requests
+import requests
+import os
+import time
 
 BASE_URL = os.getenv("KIS_BASE_URL", "https://openapivts.koreainvestment.com:29443")
 APP_KEY = os.getenv("KIS_APP_KEY")
@@ -28,7 +30,6 @@ def _get_token():
     if not _token_cache["access_token"] or time.time() > _token_cache["expires_at"]:
         return _fetch_token()
     return _token_cache["access_token"]
-
 
 # API 요청
 def kis_get(path, tr_id, params):

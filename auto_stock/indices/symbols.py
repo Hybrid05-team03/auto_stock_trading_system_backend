@@ -13,4 +13,3 @@ INDICES = {
     "kosdaq": {"code": "229200", "name": "코스닥(ETF 추정)"},
     "nasdaq": {"code": "133690", "name": "나스닥(ETF 추정)"},
 }
-

@@ -1,5 +1,5 @@
 from datetime import datetime
-from common.kis import kis_get
+from kis.api.auth import kis_get
 import os
 import time
 from .symbols import INDICES
