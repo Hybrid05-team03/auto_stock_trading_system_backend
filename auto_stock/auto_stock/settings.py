@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+<<<<<<< HEAD
 import os
 from dotenv import load_dotenv
 <<<<<<< HEAD
@@ -19,9 +20,9 @@ from dotenv import load_dotenv
 load_dotenv()
 =======
 >>>>>>> 0cd7030 ([Merge] KIS API 공통 로직 통합)
+=======
+>>>>>>> f45cfbe (Feat: RSI 지표 계산 로직 추가)
 
-# .env 파일 로드
-load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -56,7 +57,7 @@ INSTALLED_APPS = [
     'common',
     'trading',
     'kis',
-    'indices'
+    'indices',
 ]
 
 MIDDLEWARE = [
