@@ -13,4 +13,7 @@ urlpatterns = [
 
     # common app
     path('api/', include('common.urls')),
+
+    ## trading app
+    path('api/trading/', include('trading.urls')),
 ]
