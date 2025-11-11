@@ -1,7 +1,8 @@
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
 from trading.strategy.rsi_signal import get_trade_signal
 from trading.broker.kis_order import place_order
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from trading.tasks import run_auto_trading
 
 # rsi 지표 분석 후 매수/매도 시그널 (실시간 처리 적용 X 상태)
 @api_view(["POST"])
@@ -21,3 +22,8 @@ def rsi_trade_view(request, symbol):
 
     return Response(signal)
 
+# 실시간 주문 요청
+@api_view(["POST"])
+def start_auto_trading(request, symbol):
+    run_auto_trading.delay(symbol)  # ✅ 비동기 실행
+    return Response({"message": f"{symbol} 자동매매 작업이 Celery로 실행됨"})

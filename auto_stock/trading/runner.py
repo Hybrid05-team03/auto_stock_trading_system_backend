@@ -1,47 +1,59 @@
-# trading/runner.py
-from typing import List, Dict
-from trading.strategy.rsi_strategy import StrategyConfig, Portfolio, decide
-from trading.broker.kis_broker import Broker, OrderResult
+import time
+from datetime import datetime
+import numpy as np
+from trading.services.rsi_calculator import calculate_rsi
+from trading.broker.kis_order import place_order
+from kis.api.quote import get_daily_price
 
-def run_once(watchlist: List[str], cash: float, positions: Dict[str, Dict], cfg: StrategyConfig = StrategyConfig(), dry_run=True):
-    """
-    - watchlist: 감시 종목 리스트 (ex: ["005930", "000660", ...])
-    - cash, positions: 포트폴리오 상태 (실제로는 DB에서 읽기/쓰기)
-    - dry_run=True면 가상 주문
-    """
-    pf = Portfolio(cash=cash, positions=positions)
-    broker = Broker(dry_run=dry_run)
 
-    results = []
-    for symbol in watchlist:
-        d = decide(symbol, pf, cfg)
-        action: OrderResult | None = None
+def get_recent_prices(symbol: str, count: int = 100):
+    """최근 종가 데이터 100개 가져오기"""
+    df = get_daily_price(symbol, count=count)
+    if df.empty:
+        raise ValueError(f"가격 데이터를 불러올 수 없습니다. symbol={symbol}")
+    return df[["date", "close"]]
 
-        if d.side == "BUY" and d.qty > 0:
-            action = broker.buy_market(symbol, d.qty)
-            if action.ok:
-                # 포지션 반영 (간단 처리)
-                cost = (d.price or 0) * d.qty
-                pf.cash -= cost
-                pf.positions[symbol] = {"qty": d.qty, "avg_price": d.price}
-        elif d.side == "SELL" and symbol in pf.positions:
-            qty = d.qty if d.qty > 0 else pf.positions[symbol]["qty"]
-            action = broker.sell_market(symbol, qty)
-            if action.ok:
-                # 현금 반영 (간단 처리)
-                income = (d.price or 0) * qty
-                pf.cash += income
-                pf.positions[symbol] = {"qty": 0, "avg_price": pf.positions[symbol]["avg_price"]}
 
-        results.append({
-            "symbol": symbol,
-            "decision": d.side,
-            "reason": d.reason,
-            "rsi": d.rsi,
-            "price": d.price,
-            "qty": d.qty,
-            "order": (action.__dict__ if action else None),
-        })
+def get_latest_price(symbol: str):
+    """가장 최근 체결가 조회 (실제로는 WebSocket 이벤트로 대체 가능)"""
+    df = get_daily_price(symbol, count=1)
+    return float(df["close"].iloc[-1])
 
-    # 실제 서비스에선 여기서 DB에 pf 상태 저장
-    return {"cash": pf.cash, "positions": pf.positions, "results": results}
+
+def auto_trading_runner(symbol: str):
+    print(f"🔄 [{symbol}] 자동매매 시작")
+
+    df = get_recent_prices(symbol, count=100)
+
+    while True:
+        latest_price = get_latest_price(symbol)
+
+        if latest_price is None or np.isnan(latest_price):
+            print(f"[{symbol}] ❌ 가격 데이터 없음, 다음 루프로 넘어감")
+            time.sleep(5)
+            continue
+
+        df.loc[len(df)] = {"date": datetime.now(), "close": latest_price}
+        df = df.tail(100)
+
+        # 최소 2개 이상 데이터 있을 때만 RSI 계산
+        if len(df) < 2:
+            print(f"[{symbol}] 데이터 부족 (len={len(df)})")
+            time.sleep(5)
+            continue
+
+        rsi_series = calculate_rsi(df, period=2)
+        if rsi_series.isna().all():
+            print(f"[{symbol}] RSI 계산 불가 (NaN)")
+            time.sleep(5)
+            continue
+
+        rsi = rsi_series.iloc[-1]
+        print(f"[{symbol}] RSI={rsi:.2f}, Price={latest_price}")
+
+        if rsi < 5:
+            place_order(symbol, action="BUY", price=latest_price)
+        elif rsi > 80:
+            place_order(symbol, action="SELL", price=latest_price)
+
+        time.sleep(5)

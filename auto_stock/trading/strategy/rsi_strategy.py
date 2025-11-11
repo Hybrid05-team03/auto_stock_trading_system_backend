@@ -1,10 +1,16 @@
-from dataclasses import dataclass
-from typing import Literal, Optional, Dict
-
+import time
 import numpy as np
 import pandas as pd
+import requests, os
+from datetime import datetime
 
-from trading.services.rsi_calculator import get_rsi_for_symbol
+from typing import Literal, Optional, Dict
+from dataclasses import dataclass
+
+from trading.services.rsi_calculator import calculate_rsi, get_rsi_for_symbol, update_rsi
+from trading.broker.kis_order import place_order
+from kis.api.quote import get_daily_price
+from kis.api.auth import _get_headers
 
 Side = Literal["BUY", "SELL", "HOLD"]
 
@@ -99,3 +105,71 @@ def decide(symbol: str, pf: Portfolio, cfg: StrategyConfig = StrategyConfig()) -
                 return Decision(symbol, "BUY", f"RSI<{cfg.buy_thr}", rsi, price, qty)
 
     return Decision(symbol, "HOLD", "조건 불충족", rsi, price, 0)
+
+def get_recent_prices(symbol: str, count: int = 100) -> pd.DataFrame:
+    """
+    KIS API에서 최근 N일치 시세 조회 (정적)
+    """
+    df = get_daily_price(symbol, count=count)
+    if df.empty:
+        raise ValueError(f"{symbol}: 시세 데이터를 가져오지 못했습니다.")
+    return df[["date", "close"]]
+
+def get_latest_price(symbol: str) -> float:
+    """
+    KIS 실시간 현재가 조회 API (/uapi/domestic-stock/v1/quotations/inquire-price)
+    """
+    BASE_URL = os.getenv("KIS_BASE_URL")
+    endpoint = "uapi/domestic-stock/v1/quotations/inquire-price"
+    url = f"{BASE_URL}/{endpoint}"
+
+    params = {"FID_COND_MRKT_DIV_CODE": "J", "FID_INPUT_ISCD": symbol}
+    headers = _get_headers(tr_id="FHKST01010100")
+
+    try:
+        r = requests.get(url, headers=headers, params=params, timeout=10)
+        r.raise_for_status()
+        data = r.json().get("output", {})
+        return float(data.get("stck_prpr"))  # 현재가
+    except Exception as e:
+        print(f"[ERROR] get_latest_price({symbol}) 실패: {e}")
+        return np.nan
+
+def auto_trading_runner(symbol: str):
+    print(f"🔄 [{symbol}] 자동매매 시작")
+
+    df = get_recent_prices(symbol, count=100)
+
+    while True:
+        latest_price = get_latest_price(symbol)
+
+        if np.isnan(latest_price):
+            print(f"[{symbol}] ❌ 가격 데이터 없음, skip")
+            time.sleep(5)
+            continue
+
+        df.loc[len(df)] = {"date": datetime.now(), "close": latest_price}
+        df = df.tail(100)
+
+        rsi_series = calculate_rsi(df, period=2).ffill()
+        rsi = rsi_series.iloc[-1]
+
+        print(f"[{symbol}] RSI={rsi:.2f}, Price={latest_price}")
+
+        # 시그널 판단
+        if rsi < 5:
+            place_order(symbol, action="BUY", price=latest_price)
+        elif rsi > 80:
+            place_order(symbol, action="SELL", price=latest_price)
+
+        time.sleep(10)  # 너무 자주 호출하지 않도록 (API rate 제한 대비)
+
+async def handle_realtime_price(symbol, tick_data):
+    price = float(tick_data["stck_prpr"])  # 현재가
+    rsi = update_rsi(symbol, price)
+
+    # 시그널 판단
+    if rsi < 5:
+        await place_order(symbol, action="BUY", price=price)
+    elif rsi > 80:
+        await place_order(symbol, action="SELL", price=price)
