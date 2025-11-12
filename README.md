@@ -87,6 +87,12 @@ curl -X GET http://localhost:8000/api/kis/auth/token/
 
 ### 5.2 일별 시세 REST API
 
+### 기본 종목 코드를 등록합니다.
+
+``` bash
+python manage.py migrate kis_realtime
+```
+
 KRX 심볼의 정규화된 일별 데이터를 조회합니다.
 
 ```bash
