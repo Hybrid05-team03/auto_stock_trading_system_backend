@@ -9,3 +9,8 @@ PyYAML==6.0.3
 sqlparse==0.5.3
 typing_extensions==4.15.0
 uritemplate==4.2.0
+python-dotenv
+requests
+websocket-client==1.8.0
+pandas
+python-kis
