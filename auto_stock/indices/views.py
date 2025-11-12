@@ -1,6 +1,16 @@
 # auto_stock/indices/views.py
+import logging
+
 from django.http import JsonResponse
-from .services import get_indices_payload
+from rest_framework import serializers, status
+from rest_framework.decorators import api_view, renderer_classes
+from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
+from rest_framework.response import Response
+from drf_yasg.utils import swagger_auto_schema
+
+from .services import get_indices_payload, get_indices_realtime_payload
+
+logger = logging.getLogger(__name__)
 
 def indices_view(request):
     payload = get_indices_payload()
@@ -9,11 +19,6 @@ def indices_view(request):
 
 
 # --- DRF Browsable API version (overrides the plain JsonResponse view) ---
-from rest_framework.decorators import api_view, renderer_classes
-from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
-from rest_framework.response import Response
-from drf_yasg.utils import swagger_auto_schema
-from rest_framework import serializers
 
 
 class IndexDataPointSerializer(serializers.Serializer):
@@ -31,6 +36,17 @@ class IndicesResponseSerializer(serializers.Serializer):
     indices = IndexSeriesSerializer(many=True)
 
 
+class IndexQuoteSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField()
+    price = serializers.FloatField(allow_null=True)
+    timestamp = serializers.CharField(allow_null=True)
+
+
+class IndicesRealtimeResponseSerializer(serializers.Serializer):
+    quotes = IndexQuoteSerializer(many=True)
+
+
 @swagger_auto_schema(
     method='get',
     operation_summary="Market indices (KIS/ETF based)",
@@ -40,4 +56,23 @@ class IndicesResponseSerializer(serializers.Serializer):
 @renderer_classes([JSONRenderer, BrowsableAPIRenderer])
 def indices_view(request):
     payload = get_indices_payload()
+    return Response(payload)
+
+
+@swagger_auto_schema(
+    method='get',
+    operation_summary="Market indices realtime quotes (KIS WebSocket)",
+    responses={200: IndicesRealtimeResponseSerializer()}
+)
+@api_view(["GET"])
+@renderer_classes([JSONRenderer, BrowsableAPIRenderer])
+def indices_realtime_view(request):
+    try:
+        payload = get_indices_realtime_payload()
+    except Exception as exc:
+        logger.exception("Failed to fetch realtime indices: %s", exc)
+        return Response(
+            {"detail": "Failed to fetch realtime quotes."},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
     return Response(payload)

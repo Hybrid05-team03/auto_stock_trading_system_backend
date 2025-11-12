@@ -48,8 +48,10 @@ INSTALLED_APPS = [
 
     ## user created apps
     'common',
-    'kis',
-    'indices'
+    'indices',
+    'kis_auth',
+    'kis_prices',
+    'kis_realtime',
 ]
 
 MIDDLEWARE = [

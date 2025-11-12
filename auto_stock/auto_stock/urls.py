@@ -14,4 +14,7 @@ urlpatterns = [
     # common app
     path('api/', include('common.urls')),
     path('api/market/', include('indices.urls')),
+    path('api/kis/auth/', include('kis_auth.urls')),
+    path('api/kis/prices/', include('kis_prices.urls')),
+    path('api/kis/realtime/', include('kis_realtime.urls')),
 ]
