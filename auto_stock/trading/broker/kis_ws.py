@@ -4,9 +4,9 @@ import threading
 import time
 from datetime import datetime
 from trading.services.rsi_calculator import update_rsi
-from trading.broker.kis_order import place_order
+from kis.websocket.trading_ws import KISTRADING
 
-# 모의투자 WebSocket 주소
+## KIS 웹 소켓 API 요청 처리
 WS_URL = "wss://openapivts.koreainvestment.com:29443/websocket"
 
 # 구독 메시지 구성
@@ -26,7 +26,6 @@ def build_subscribe_message(symbol):
         },
     }
 
-
 def on_message(ws, message):
     try:
         msg = json.loads(message)
@@ -43,28 +42,24 @@ def on_message(ws, message):
             print(f"  RSI={rsi:.2f}")
 
             if rsi < 5:
-                place_order(symbol, action="BUY", price=price)
+                KISTRADING(symbol, action="BUY", price=price)
             elif rsi > 80:
-                place_order(symbol, action="SELL", price=price)
+                KISTRADING(symbol, action="SELL", price=price)
 
     except Exception as e:
         print("[ERROR] on_message:", e)
 
-
 def on_error(ws, error):
     print("[ERROR]", error)
 
-
 def on_close(ws, close_status_code, close_msg):
     print("❌ WebSocket 닫힘:", close_msg)
-
 
 def on_open(ws):
     print("✅ WebSocket 연결됨, 구독 요청 중...")
     time.sleep(1)
     msg = build_subscribe_message("005930")  # 테스트용 삼성전자
     ws.send(json.dumps(msg))
-
 
 def start_kis_websocket():
     ws = websocket.WebSocketApp(

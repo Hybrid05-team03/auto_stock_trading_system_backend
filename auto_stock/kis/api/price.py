@@ -1,71 +1,70 @@
-from typing import Any, Dict, Iterable, List, Union
+import logging
+import numpy as np
+from typing import List, Dict, Union
 
-from kis_prices.client import kis_request
+from kis.api.util.request import request_get
+
+logger = logging.getLogger(__name__)
 
 DailyPriceRow = Dict[str, Union[str, float, int]]
 
-def get_daily_price_payload(symbol: str, period: str = "D") -> Dict[str, Any]:
-    """
-    Call the KIS daily price API and return the raw payload.
-    """
-    endpoint = "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice"
-    tr_id = "VTTC8814R"
+# --------------------------------------------------------------------
+# 일별 시세 조회
+# --------------------------------------------------------------------
+def fetch_price_series(symbol: str, period: str = "D") -> List[DailyPriceRow]:
+    path = "/uapi/domestic-stock/v1/quotations/inquire-daily-price"
+    tr_id = "FHKST01010400"
     params = {
-        "FID_COND_MRKT_DIV_CODE": "J",
-        "FID_INPUT_ISCD": symbol,
-        "FID_PERIOD_DIV_CODE": period,
-        "FID_ORG_ADJ_PRC": "0",
+        "FID_COND_MRKT_DIV_CODE": "J",   # 주식시장 구분코드 (J: 주식)
+        "FID_INPUT_ISCD": symbol,         # 종목코드 (예: 005930)
+        "FID_PERIOD_DIV_CODE": period,    # D:일, W:주, M:월
+        "FID_ORG_ADJ_PRC": "0",           # 수정주가 반영여부
     }
-    res = kis_request("GET", endpoint, tr_id, params=params)
-    return res
 
+    try:
+        data = request_get(path, tr_id, params)
+        raw = data.get("output", [])
+    except Exception as e:
+        logger.error(f"[KIS ERROR] Failed to fetch {symbol}: {e}")
+        return []
 
-def get_daily_price(symbol: str, period: str = "D") -> List[Dict]:
-    """
-    Fetch raw daily price rows from KIS.
-    """
-    res = get_daily_price_payload(symbol, period=period)
-    return res.get("output2", [])
-
-
-def normalize_daily_prices(data: Iterable[Dict]) -> List[DailyPriceRow]:
-    """
-    Convert raw KIS daily price rows into normalized dictionaries.
-    """
-    normalized: List[DailyPriceRow] = []
-    for row in data or []:
+    result: List[DailyPriceRow] = []
+    for row in raw or []:
         try:
-            normalized.append(
-                {
-                    "date": row["stck_bsop_date"],
-                    "open": float(row["stck_oprc"]),
-                    "high": float(row["stck_hgpr"]),
-                    "low": float(row["stck_lwpr"]),
-                    "close": float(row["stck_clpr"]),
-                    "volume": int(row["acml_vol"]),
-                }
-            )
+            result.append({
+                "date": row["stck_bsop_date"],
+                "open": float(row["stck_oprc"]),
+                "high": float(row["stck_hgpr"]),
+                "low": float(row["stck_lwpr"]),
+                "close": float(row["stck_clpr"]),
+                "volume": int(row["acml_vol"]),
+            })
         except (KeyError, TypeError, ValueError):
             continue
-    return normalized
+
+    print("[DEBUG]", data.keys(), "rt_cd:", data.get("rt_cd"), "msg_cd:", data.get("msg_cd"), "msg1:", data.get("msg1"))
+    return result
 
 
-def fetch_price_series(symbol: str, period: str = "D") -> List[DailyPriceRow]:
+# --------------------------------------------------------------------
+# 단일 시세 (현재가) 조회
+# --------------------------------------------------------------------
+def kis_get_realtime_price(symbol: str) -> float:
     """
-    Helper for REST endpoints that need normalized rows.
+    Get the latest realtime price for a symbol using REST (real account version).
     """
-    raw = get_daily_price(symbol, period=period)
-    return normalize_daily_prices(raw)
+    path = "/uapi/domestic-stock/v1/quotations/inquire-price"
+    tr_id = "FHKST01010100"
+    params = {
+        "FID_COND_MRKT_DIV_CODE": "J",   # 시장코드
+        "FID_INPUT_ISCD": symbol,         # 종목코드
+    }
 
-
-def fetch_price_df(symbol: str, period: str = "D"):
-    """
-    Return normalized rows as a pandas DataFrame.
-    """
     try:
-        import pandas as pd
-    except ImportError as exc:
-        raise RuntimeError("pandas is required to build a DataFrame result.") from exc
-
-    rows = fetch_price_series(symbol, period=period)
-    return pd.DataFrame(rows)
+        data = request_get(path, tr_id, params)
+        output = data.get("output", {})
+        price = output.get("stck_prpr")
+        return float(price) if price else np.nan
+    except Exception as e:
+        logger.error(f"[REST ERROR] {symbol}: {e}")
+        return np.nan
