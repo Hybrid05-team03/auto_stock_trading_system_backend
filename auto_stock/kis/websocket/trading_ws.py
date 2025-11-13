@@ -4,11 +4,12 @@ import time
 
 from typing import Literal
 from kis.api.util.request import _get_headers
-from trading.data.trade_result import TradeResult
+from trading.data.trading_result import TradeResult
 
 # --- 환경 변수 ---
 BASE_URL = os.getenv("KIS_BASE_URL")
-ACCOUNT_NO = os.getenv("KIS_ACCOUNT_NO") # ex) "12345678-01"
+KIS_WS_BASE_URL = os.getenv("KIS_WS_BASE_URL")
+ACCOUNT_NO = os.getenv("KIS_ACCOUNT_NO")
 
 # --- 데이터 모델 ---
 Side = Literal["BUY", "SELL"]
@@ -27,18 +28,12 @@ class KISTRADING:
 
     def _get_tr_id(self, side: Side) -> str:
         if side == "BUY":
-            return "VTTC0012U" # 매수
+            return "TTTC0011U" # 매수
         else:
-            return "VTTC0011U" # 매도
+            return "TTTC0012U" # 매도
 
-    def place_order(
-        self,
-        symbol: str,
-        side: Side,
-        qty: int,
-        order_type: OrderType = "limit",
-        price: int = 0,
-    ) -> TradeResult:
+    def place_order(self, symbol: str, side: Side, qty: int,
+        order_type: OrderType = "limit", price: int = 0) -> TradeResult:
 
         if order_type == "market":
             price = 0 # 시장가 주문 시 가격은 0
@@ -53,7 +48,7 @@ class KISTRADING:
         headers = _get_headers(tr_id=tr_id)
         endpoint = "/uapi/domestic-stock/v1/trading/order-cash"
         time.sleep(0.05)
-        url = f"{BASE_URL}{endpoint}"
+        url = f"{KIS_WS_BASE_URL}{endpoint}"
 
         body = {
             "CANO": self.cano, # 계좌 번호
