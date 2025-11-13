@@ -7,7 +7,7 @@ from .serializers import RealtimeSymbolSerializer
 
 from kis.auth.kis_token import get_token
 from kis.api.price import fetch_price_series
-from kis.websocket.quote_ws import fetch_realtime_quote
+from kis.websocket.quote_ws import fetch_realtime_quote, REALTIME_TR_ID
 
 ## kis/auth 토큰 발급
 class TokenStatusView(APIView):
@@ -39,7 +39,7 @@ class RealtimeQuoteView(APIView):
     def get(self, request):
         raw_codes = request.query_params.get("codes", "")
         codes = [c.strip() for c in raw_codes.split(",") if c.strip()]
-
+        TR_ID = REALTIME_TR_ID
         if not codes:
             return Response(
                 {"detail": "Query parameter 'codes' is required."},
@@ -47,10 +47,10 @@ class RealtimeQuoteView(APIView):
             )
 
         # 바로 fetch_realtime_quotes로 전달
-        targets = {code: {"code": code, "name": code} for code in codes}
+        # targets = {code: {"tr_id": TR_ID, "tr_key": code} for code in codes}
 
         try:
-            quotes = fetch_realtime_quote(targets)
+            quotes = fetch_realtime_quote(TR_ID, raw_codes)
             return Response({"quotes": quotes})
         except Exception as exc:
             return Response(
