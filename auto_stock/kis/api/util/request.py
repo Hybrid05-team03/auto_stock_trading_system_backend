@@ -31,6 +31,7 @@ def request_get(path, tr_id, params):
 
     print(f"▶️ KIS GET {url} {params}")
     kis_response = requests.get(url, headers=headers, params=params, timeout=10)
+
     print(f"⬅️ STATUS {kis_response.status_code}")
     if not kis_response.ok:
         print("Response text:", kis_response.text[:200])

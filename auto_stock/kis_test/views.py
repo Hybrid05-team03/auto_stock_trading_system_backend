@@ -51,7 +51,7 @@ class RealtimeQuoteView(APIView):
         results = []
 
         for code in codes:
-            quote = fetch_realtime_quote(REALTIME_TR_ID, code)
+            quote = fetch_realtime_quote(code)
             results.append({
                 "code": code,
                 "quote": quote

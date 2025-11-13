@@ -15,6 +15,7 @@ WS_CONNECT_TIMEOUT = float(os.getenv("INDICES_WS_CONNECT_TIMEOUT"))
 REALTIME_TR_ID = os.getenv("KIS_REALTIME_TR_ID")
 WS_CUST_TYPE = os.getenv("KIS_WS_CUSTOMER_TYPE")
 
+
 # --------------------------------------------------------------------
 # 실시간 시세 조회 (WebSocket)
 # --------------------------------------------------------------------
@@ -23,7 +24,7 @@ def fetch_realtime_quote(tr_id: str, symbol: str) -> Optional[Dict[str, Any]]:
     ws = create_connection(WS_BASE_URL, timeout=WS_CONNECT_TIMEOUT)
 
     try:
-       
+
         # 연결 후 Subscription 메시지 보내기
         _send_subscription(ws, approval_key=approval_key,
                            tr_id=REALTIME_TR_ID, code=symbol, tr_type="1")
