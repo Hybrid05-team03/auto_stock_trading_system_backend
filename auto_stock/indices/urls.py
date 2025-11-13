@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import indices_view, indices_realtime_view
+from .views import indices_realtime_view, indices_view
 
 urlpatterns = [
     # this file is included under the prefix: /api/market/
