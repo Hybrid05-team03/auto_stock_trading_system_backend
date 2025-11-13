@@ -51,11 +51,14 @@ class RealtimeQuoteView(APIView):
         # targets = {code: {"tr_id": TR_ID, "tr_key": code} for code in codes}
 
         TR_ID = REALTIME_TR_ID
-        results = {}
+        results = []
 
         for code in codes:
             quote = fetch_realtime_quote(TR_ID, code)
-            results[code] = quote
+            results.append({
+                "code": code,
+                "quote": quote
+            })
         return Response({"quotes": results})
 
 
