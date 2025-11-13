@@ -46,15 +46,12 @@ class RealtimeQuoteView(APIView):
                 {"detail": "Query parameter 'codes' is required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        # 바로 fetch_realtime_quotes로 전달
-        # targets = {code: {"tr_id": TR_ID, "tr_key": code} for code in codes}
-
-        TR_ID = REALTIME_TR_ID
+        
+        # 종목 코드 ","로 구분하여 요청 (ex: 005930,000660)
         results = []
 
         for code in codes:
-            quote = fetch_realtime_quote(TR_ID, code)
+            quote = fetch_realtime_quote(REALTIME_TR_ID, code)
             results.append({
                 "code": code,
                 "quote": quote
