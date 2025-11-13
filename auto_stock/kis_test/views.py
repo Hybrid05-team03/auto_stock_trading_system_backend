@@ -39,7 +39,8 @@ class RealtimeQuoteView(APIView):
     def get(self, request):
         raw_codes = request.query_params.get("codes", "")
         codes = [c.strip() for c in raw_codes.split(",") if c.strip()]
-        TR_ID = REALTIME_TR_ID
+
+
         if not codes:
             return Response(
                 {"detail": "Query parameter 'codes' is required."},
@@ -49,14 +50,15 @@ class RealtimeQuoteView(APIView):
         # 바로 fetch_realtime_quotes로 전달
         # targets = {code: {"tr_id": TR_ID, "tr_key": code} for code in codes}
 
-        try:
-            quotes = fetch_realtime_quote(TR_ID, raw_codes)
-            return Response({"quotes": quotes})
-        except Exception as exc:
-            return Response(
-                {"detail": f"Failed to fetch realtime quotes: {exc}"},
-                status=status.HTTP_502_BAD_GATEWAY,
-            )
+        TR_ID = REALTIME_TR_ID
+        results = {}
+
+        for code in codes:
+            quote = fetch_realtime_quote(TR_ID, code)
+            results[code] = quote
+        return Response({"quotes": results})
+
+
 
 ## kis/api 가격 조회
 class DailyPriceView(APIView):
