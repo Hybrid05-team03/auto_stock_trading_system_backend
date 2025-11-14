@@ -8,7 +8,7 @@ from trading.services.trading_strategy import determine_signal
 from kis.websocket.trading_ws import KISTRADING
 
 df_cache = {}
-trader = KISTRADING(dry_run=True)
+trader = KISTRADING(dry_run=False)
 
 def on_price_update(symbol, price):
     global df_cache
