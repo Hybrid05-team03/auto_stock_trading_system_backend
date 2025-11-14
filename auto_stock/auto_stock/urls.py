@@ -14,6 +14,8 @@ urlpatterns = [
     path(r'swagger', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 
+    # (개발용) metrics 엔드포인트
+    path('', include('django_prometheus.urls')),
     # (서비스용) common app
     path('api/', include('common.urls')),
 
