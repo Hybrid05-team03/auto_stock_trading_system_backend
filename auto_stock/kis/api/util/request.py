@@ -6,6 +6,7 @@ from kis.auth.kis_token import get_token
 BASE_URL = os.getenv("KIS_BASE_URL")
 APP_KEY = os.getenv("KIS_APP_KEY")
 APP_SECRET = os.getenv("KIS_APP_SECRET")
+KIS_CUST_TYPE = os.getenv("KIS_CUST_TYPE")
 
 # --------------------------------------------------------------------
 # KIS 요청 헤더 생성
@@ -17,7 +18,7 @@ def _get_headers(tr_id: str):
         "appkey": APP_KEY,
         "appsecret": APP_SECRET,
         "tr_id": tr_id,
-        "custtype": "P",
+        "custtype": KIS_CUST_TYPE,
         "content-type": "application/json; charset=utf-8",
     }
 

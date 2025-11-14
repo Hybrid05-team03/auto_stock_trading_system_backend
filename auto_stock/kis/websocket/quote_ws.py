@@ -19,7 +19,7 @@ WS_CUST_TYPE = os.getenv("KIS_WS_CUSTOMER_TYPE")
 # --------------------------------------------------------------------
 # 실시간 시세 조회 (WebSocket)
 # --------------------------------------------------------------------
-def fetch_realtime_quote(tr_id: str, symbol: str) -> Optional[Dict[str, Any]]:
+def fetch_realtime_quote(symbol: str) -> Optional[Dict[str, Any]]:
     approval_key = get_web_socket_key()
     ws = create_connection(WS_BASE_URL, timeout=WS_CONNECT_TIMEOUT)
 

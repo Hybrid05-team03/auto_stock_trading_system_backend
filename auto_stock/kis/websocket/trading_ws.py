@@ -28,9 +28,9 @@ class KISTRADING:
 
     def _get_tr_id(self, side: Side) -> str:
         if side == "BUY":
-            return "TTTC0011U" # 매수
+            return os.getenv("KIS_BUY_TR_ID") # 매수
         else:
-            return "TTTC0012U" # 매도
+            return os.getenv("KIS_SELL_TR_ID")# 매도
 
     def place_order(self, symbol: str, side: Side, qty: int,
         order_type: OrderType = "limit", price: int = 0) -> TradeResult:
@@ -48,7 +48,7 @@ class KISTRADING:
         headers = _get_headers(tr_id=tr_id)
         endpoint = "/uapi/domestic-stock/v1/trading/order-cash"
         time.sleep(0.05)
-        url = f"{KIS_WS_BASE_URL}{endpoint}"
+        url = f"{BASE_URL}{endpoint}"
 
         body = {
             "CANO": self.cano, # 계좌 번호
@@ -60,7 +60,7 @@ class KISTRADING:
         }
 
         try:
-            res = requests.post(url, headers=headers, data=body, timeout=10)  # ✅ data=body 로 변경
+            res = requests.post(url, headers=headers, json=body, timeout=10)  # ✅ data=body 로 변경
             res.raise_for_status()
 
             data = res.json()

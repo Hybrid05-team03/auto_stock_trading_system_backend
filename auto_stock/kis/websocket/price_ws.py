@@ -6,7 +6,7 @@ import threading
 from kis.auth.kis_ws_key import get_web_socket_key
 
 WS_URL = os.getenv("KIS_WS_BASE_URL")
-TR_ID = "H0STCNT0"  # 국내 주식 실시간 체결가
+TR_ID = os.getenv("KIS_WS_TR_ID")  # 국내 주식 실시간 체결가
 CUSTTYPE = os.getenv("KIS_WS_CUSTOMER_TYPE")
 approval_key = get_web_socket_key()
 
@@ -79,7 +79,7 @@ def start_price_stream(symbol: str, on_price_callback):
         if tick is None:
             return  # heartbeat or other message
 
-        on_price_callback(symbol, tick["price"], tick)
+        on_price_callback(symbol, tick["price"])
 
     def on_open(ws):
         ws.send(json.dumps(build_subscribe_msg(symbol)))
@@ -94,4 +94,3 @@ def start_price_stream(symbol: str, on_price_callback):
 
     thread = threading.Thread(target=ws.run_forever, daemon=True)
     thread.start()
-    return ws

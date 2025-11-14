@@ -11,6 +11,19 @@ APP_SECRET = os.getenv("KIS_APP_SECRET")
 CACHED_TTL = 86400  # 24시간
 _WS_KEY_CACHE = {"approval_key": None, "approval_expires_at": 0}
 
+
+def _get_env():
+    BASE_URL = os.getenv("KIS_BASE_URL")
+    APP_KEY = os.getenv("KIS_APP_KEY")
+    APP_SECRET = os.getenv("KIS_APP_SECRET")
+
+    if not BASE_URL or not APP_KEY or not APP_SECRET:
+        raise EnvironmentError(
+            "KIS 환경변수(KIS_BASE_URL, KIS_APP_KEY, KIS_APP_SECRET)가 설정되지 않았습니다."
+        )
+    return BASE_URL, APP_KEY, APP_SECRET
+
+
 ## key, secret 확인
 def _ensure_kis_credentials():
     if not all([BASE_URL, APP_KEY, APP_SECRET]):
