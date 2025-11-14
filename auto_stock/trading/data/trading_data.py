@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Literal
 
+
 TradeSide = Literal["BUY", "SELL", "HOLD"]
 
 @dataclass

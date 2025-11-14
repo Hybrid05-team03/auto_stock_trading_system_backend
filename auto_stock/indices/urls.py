@@ -1,8 +1,9 @@
 from django.urls import path
-from .views import indices_realtime_view, indices_view
+from indices import views
+
 
 urlpatterns = [
-    # this file is included under the prefix: /api/market/
-    path("indices/", indices_view, name="market-indices"),
-    path("indices/realtime/", indices_realtime_view, name="market-indices-realtime"),
+    # this urls are included under the prefix: /api/market/
+    path("indices/", views.indices_view, name="market-indices"),
+    path("indices/realtime/", views.indices_realtime_view, name="market-indices-realtime"),
 ]
