@@ -11,6 +11,7 @@ click-plugins==1.1.1.2
 click-repl==0.3.0
 Django==4.2.26
 djangorestframework==3.16.1
+django-prometheus==2.4.1
 dotenv==0.9.9
 drf-yasg==1.21.11
 gevent==25.9.1
@@ -40,7 +41,5 @@ websockets==15.0.1
 zope.event==6.0
 zope.interface==8.0.1
 
-python-dotenv
-requests
-pandas
+
 python-kis
