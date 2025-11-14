@@ -66,7 +66,7 @@ def indices_view(request):
 @renderer_classes([JSONRenderer, BrowsableAPIRenderer])
 def indices_realtime_view(request):
     try:
-        payload = get_indices_realtime_payload()
+        payload = get_indices_realtime_payload(request)
     except Exception as exc:
         logger.exception("Failed to fetch realtime indices: %s", exc)
         return Response(
