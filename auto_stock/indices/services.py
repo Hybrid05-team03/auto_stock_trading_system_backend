@@ -5,6 +5,7 @@ from .symbols import INDICES
 from kis.api.util.request import request_get
 from kis.websocket.quote_ws import fetch_realtime_quote, REALTIME_TR_ID
 
+
 # 간단 캐시/스로틀: 잦은 새로고침 시 KIS 호출 제한
 _CACHE_TTL = int(os.getenv("INDICES_CACHE_TTL_SECONDS", "5"))
 _STATE = {"last_payload": None, "last_at": 0.0}
@@ -18,7 +19,7 @@ SYMBOLS = {
 }
 
 # 국내 일자별 시세
-TR_ID_DAILY = "FHKST01010400"
+TR_ID_DAILY = os.getenv("KIS_GET_TR_ID")
 PATH_DAILY  = "/uapi/domestic-stock/v1/quotations/inquire-daily-price"
 
 def _fetch_daily_5(code: str):

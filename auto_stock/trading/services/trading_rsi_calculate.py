@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+
 def calculate_rsi(df: pd.DataFrame, period: int = 14) -> pd.Series:
     delta = df["close"].diff()
 

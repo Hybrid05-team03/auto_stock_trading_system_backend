@@ -1,10 +1,9 @@
 from django.urls import path
 
-from .views import RealtimeSymbolView, RealtimeQuoteView, DailyPriceView, TokenStatusView
+from .views import RealtimeQuoteView, DailyPriceView, TokenStatusView
 
 urlpatterns = [
-    path("symbols/", RealtimeSymbolView.as_view(), name="kis-realtime-symbols"), # 불필요한 기능, 삭제 예정
-    path("quotes/", RealtimeQuoteView.as_view(), name="kis-realtime-quotes"), # 테스트 필요 
+    path("quotes/", RealtimeQuoteView.as_view(), name="kis-realtime-quotes"),
     path("daily/", DailyPriceView.as_view(), name="kis-daily-price"),
     path("token/", TokenStatusView.as_view(), name="kis-auth-token-status"),
 ]

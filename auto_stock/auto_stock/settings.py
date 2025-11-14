@@ -14,12 +14,14 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
+
+## 환경 변수 로드
 env = os.getenv("DJANGO_ENV", "local")  # 기본값: local
 env_file = f".env.{env}"
 
 print(f"▶️ Using env: {env_file}")
 load_dotenv(dotenv_path=env_file)
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
@@ -49,7 +51,6 @@ INSTALLED_APPS = [
     'drf_yasg',
 
     ## user created apps
-    'common',
     'indices',
     'trading',
     'kis_test'

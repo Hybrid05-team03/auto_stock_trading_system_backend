@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-from common.swagger import schema_view
+from common.utils.swagger import schema_view
 
 urlpatterns = [
     # (관리자) admin
@@ -16,8 +16,6 @@ urlpatterns = [
 
     # (개발용) metrics 엔드포인트
     path('', include('django_prometheus.urls')),
-    # (서비스용) common app
-    path('api/', include('common.urls')),
 
     ## (서비스용) trading app
     path('api/trading/', include('trading.urls')),
