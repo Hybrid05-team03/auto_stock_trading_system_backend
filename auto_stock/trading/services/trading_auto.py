@@ -8,7 +8,7 @@ from trading.services.trading_strategy import determine_signal
 from kis.websocket.trading_ws import KISTRADING
 
 df_cache = {}
-trader = KISTRADING(dry_run=False)
+trader = KISTRADING(dry_run=True)
 
 def on_price_update(symbol, price):
     global df_cache
@@ -19,9 +19,10 @@ def on_price_update(symbol, price):
         "close": price
     }])], ignore_index=True).tail(100)
 
-    rsi = float(calculate_rsi(df, period=2).iloc[-1].fillna(50))
-    signal = determine_signal(symbol, rsi, price)
+    rsi_series = calculate_rsi(df, period=2).fillna(50)
+    rsi = float(rsi_series.iloc[-1])
 
+    signal = determine_signal(symbol, rsi, price)
     print(f"[{symbol}] {signal.side} | Price={price} | {signal.reason}")
 
     if signal.side in ["BUY", "SELL"]:

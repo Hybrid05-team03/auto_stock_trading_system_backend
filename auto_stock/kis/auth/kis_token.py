@@ -11,6 +11,7 @@ APP_KEY = os.getenv("KIS_APP_KEY")
 APP_SECRET = os.getenv("KIS_APP_SECRET")
 
 TTL = 3600
+
 _TOKEN_CACHE: Dict[str, Optional[Any]] = {"access_token": None, "expires_at": 0.0}
 
 
