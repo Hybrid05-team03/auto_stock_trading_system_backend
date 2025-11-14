@@ -10,11 +10,15 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# .env 파일 로드
-load_dotenv()
+env = os.getenv("DJANGO_ENV", "local")  # 기본값: local
+env_file = f".env.{env}"
+
+print(f"▶️ Using env: {env_file}")
+load_dotenv(dotenv_path=env_file)
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 

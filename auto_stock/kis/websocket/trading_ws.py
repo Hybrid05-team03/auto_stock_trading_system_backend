@@ -4,11 +4,12 @@ import time
 
 from typing import Literal
 from kis.api.util.request import _get_headers
-from trading.data.trade_result import TradeResult
+from trading.data.trading_result import TradeResult
 
 # --- 환경 변수 ---
 BASE_URL = os.getenv("KIS_BASE_URL")
-ACCOUNT_NO = os.getenv("KIS_ACCOUNT_NO") # ex) "12345678-01"
+KIS_WS_BASE_URL = os.getenv("KIS_WS_BASE_URL")
+ACCOUNT_NO = os.getenv("KIS_ACCOUNT_NO")
 
 # --- 데이터 모델 ---
 Side = Literal["BUY", "SELL"]
@@ -27,18 +28,12 @@ class KISTRADING:
 
     def _get_tr_id(self, side: Side) -> str:
         if side == "BUY":
-            return "VTTC0012U" # 매수
+            return os.getenv("KIS_BUY_TR_ID") # 매수
         else:
-            return "VTTC0011U" # 매도
+            return os.getenv("KIS_SELL_TR_ID")# 매도
 
-    def place_order(
-        self,
-        symbol: str,
-        side: Side,
-        qty: int,
-        order_type: OrderType = "limit",
-        price: int = 0,
-    ) -> TradeResult:
+    def place_order(self, symbol: str, side: Side, qty: int,
+        order_type: OrderType = "limit", price: int = 0) -> TradeResult:
 
         if order_type == "market":
             price = 0 # 시장가 주문 시 가격은 0
@@ -65,7 +60,7 @@ class KISTRADING:
         }
 
         try:
-            res = requests.post(url, headers=headers, data=body, timeout=10)  # ✅ data=body 로 변경
+            res = requests.post(url, headers=headers, json=body, timeout=10)  # ✅ data=body 로 변경
             res.raise_for_status()
 
             data = res.json()
