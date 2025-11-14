@@ -3,7 +3,7 @@ import time
 from .symbols import INDICES
 
 from kis.api.util.request import request_get
-from kis.websocket.quote_ws import fetch_realtime_quote
+from kis.websocket.quote_ws import fetch_realtime_quote, REALTIME_TR_ID
 
 # 간단 캐시/스로틀: 잦은 새로고침 시 KIS 호출 제한
 _CACHE_TTL = int(os.getenv("INDICES_CACHE_TTL_SECONDS", "5"))
@@ -78,6 +78,20 @@ def get_indices_payload():
         return {"indices": []}
 
 
-def get_indices_realtime_payload():
-    quotes = fetch_realtime_quote(INDICES)
-    return {"quotes": quotes}
+def get_indices_realtime_payload(request):
+    raw_codes = request.query_params.get("codes", "")
+    codes = [c.strip() for c in raw_codes.split(",") if c.strip()]
+    
+    if not codes:
+        raise ValueError("Query parameter 'codes' is required.")
+    
+    results = []
+
+    # "TR_ID" 조회 항목에 맞게 변경
+    for code in codes:
+        quote = fetch_realtime_quote(REALTIME_TR_ID, code)
+        results.append({
+            "code": code,
+            "quote": quote
+        })
+    return {"quotes": results}
