@@ -92,3 +92,42 @@ class DailyPriceView(APIView):
                 status=status.HTTP_502_BAD_GATEWAY,
             )
         return Response({"symbol": symbol, "period": period, "series": series})
+    
+
+## Kis/websocket/index 실시간 조회
+class IndexView(APIView):
+    def get(self, request):
+        raw_codes = request.query_params.get("index_code", "")
+        codes = [c.strip() for c in raw_codes.split(",") if c.strip()]
+
+
+        if not codes:
+            return Response(
+                {"detail": "Query parameter 'codes' is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # 종목 코드 ","로 구분하여 요청 (ex: 005930,000660)
+        results = []
+
+        for code in codes:
+            data = fetch_realtime_quote(
+                endpoint="/tryitout/",
+                symbol=code,
+                tr_id="H0UPCNT0"
+            )
+
+            if not data:
+                results.append({"code": code, "error": "no data"})
+                continue
+
+            results.append({
+                "code": data["symbol"],
+                "price": data["price"],
+                "change": data["change"],
+                "change_sign": data["change_sign"],
+                "change_rate": data["change_rate"],
+                "trade_value": data["trade_value"],
+                "timestamp": data["timestamp"],
+            })
+        return Response({"quotes": results})
