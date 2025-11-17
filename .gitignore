@@ -15,3 +15,7 @@ secrets.json
 
 # Environments
 myvenv/
+
+.env.local
+.env.prod
+.env

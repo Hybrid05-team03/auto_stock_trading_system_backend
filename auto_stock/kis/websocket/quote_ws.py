@@ -19,18 +19,24 @@ WS_CUST_TYPE = os.getenv("KIS_WS_CUSTOMER_TYPE")
 # --------------------------------------------------------------------
 # 실시간 시세 조회 (WebSocket)
 # --------------------------------------------------------------------
-def fetch_realtime_quote(symbol: str) -> Optional[Dict[str, Any]]:
+def fetch_realtime_quote(endpoint: str, symbol: str, tr_id: str) -> Optional[Dict[str, Any]]:
     approval_key = get_web_socket_key()
-    ws = create_connection(WS_BASE_URL, timeout=WS_CONNECT_TIMEOUT)
+    ws = create_connection(WS_BASE_URL + endpoint, timeout=WS_CONNECT_TIMEOUT)
 
+    print("웹 소켓 키는: ", approval_key)
     try:
 
         # 연결 후 Subscription 메시지 보내기
         _send_subscription(ws, approval_key=approval_key,
-                           tr_id=REALTIME_TR_ID, code=symbol, tr_type="1")
+                           tr_id=tr_id, code=symbol, tr_type="1")
 
-        result = _wait_for_trade_frame(ws, symbol, REALTIME_TR_ID)
-        _send_subscription(ws, approval_key, REALTIME_TR_ID, symbol, tr_type="2")
+        # 연결 테스트용 
+        _wait_for_trade_frame(ws, symbol, tr_id)
+        
+        # 실제 데이터 
+        result = _wait_for_trade_frame(ws, symbol, tr_id)
+        
+        _send_subscription(ws, approval_key, tr_id, symbol, tr_type="2")
 
         ws.close()
 

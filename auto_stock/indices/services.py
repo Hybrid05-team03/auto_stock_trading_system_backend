@@ -3,7 +3,7 @@ import time
 from .symbols import INDICES
 
 from kis.api.util.request import request_get
-from kis.websocket.quote_ws import fetch_realtime_quote, REALTIME_TR_ID
+from kis.websocket.quote_ws import fetch_realtime_quote
 
 
 # 간단 캐시/스로틀: 잦은 새로고침 시 KIS 호출 제한
@@ -21,6 +21,7 @@ SYMBOLS = {
 # 국내 일자별 시세
 TR_ID_DAILY = os.getenv("KIS_GET_TR_ID")
 PATH_DAILY  = "/uapi/domestic-stock/v1/quotations/inquire-daily-price"
+REALTIME_TR_ID = os.getenv("REALTIME_TR_ID")
 
 def _fetch_daily_5(code: str):
     params = {
@@ -90,7 +91,7 @@ def get_indices_realtime_payload(request):
 
     # "TR_ID" 조회 항목에 맞게 변경
     for code in codes:
-        quote = fetch_realtime_quote(REALTIME_TR_ID, code)
+        quote = fetch_realtime_quote("/tryitout/H0STCNT0", code, tr_id=REALTIME_TR_ID)
         results.append({
             "code": code,
             "quote": quote
