@@ -108,34 +108,69 @@ def _wait_for_trade_frame(ws, symbol: str, expected_tr_id: str, raw_frame: Optio
             return None
 
         fields = body.split("^")
-        if len(fields) < 3:
+        if len(fields) < 15:
+            return None
+        
+
+        ### ------------------ 매핑 추가 ----------------- ###
+
+        # --- Body 필드 매핑 ---
+        code_raw        = fields[0]
+        time_str        = fields[1]
+        prpr_str        = fields[2]
+        prdy_vrss_sign  = fields[3]
+        prdy_vrss_str   = fields[4]
+        prdy_ctrt_str   = fields[5]
+        acml_tr_pbmn_str= fields[14]
+        
+        
+        # 코드 포맷 보정 (A005930 → 005930)
+        code = code_raw[1:] if code_raw.startswith("A") else code_raw
+        if code != symbol:
             return None
 
-        code = fields[0] or symbol
-        price_str = fields[2]  # STCK_PRPR 위치 (문서상 인덱스 2)  [oai_citation:3‡위키독스](https://wikidocs.net/250009?utm_source=chatgpt.com)
-        time_str = fields[1] if len(fields) > 1 else ""
+        def to_float(v):
+            try:
+                return float(v)
+            except (ValueError, TypeError):
+                return None
 
-        try:
-            price = float(price_str)
-        except (ValueError, TypeError):
+        def to_int(v):
+            try:
+                return int(v)
+            except (ValueError, TypeError):
+                return None
+
+        price       = to_float(prpr_str)
+        change      = to_float(prdy_vrss_str)
+        change_rate = to_float(prdy_ctrt_str)
+        trade_value = to_int(acml_tr_pbmn_str)
+
+        if price is None:
             return None
 
-        # 시간은 그대로 넘기거나, KST datetime으로 가공해도 됨
-        timestamp = time_str
+        # "112325" → "11:23:25" 정도로 가공 (원하면 ISO로 바꿔도 됨)
+        if len(time_str) >= 6:
+            hh, mm, ss = time_str[0:2], time_str[2:4], time_str[4:6]
+            timestamp = f"{hh}:{mm}:{ss}"
+        else:
+            timestamp = time_str
 
         return {
             "symbol": code,
             "price": price,
+            "change": change,
+            "change_sign": prdy_vrss_sign,
+            "change_rate": change_rate,
+            "trade_value": trade_value,
             "timestamp": timestamp,
             "raw": frame,
         }
-
-    frame_stripped = frame.strip()
-
     # -----------------------------
     # 2. JSON 포맷 처리
     #    예: {"body": {"output": {...}}}
     # -----------------------------
+    frame_stripped = frame.strip()
     if frame_stripped.startswith("{"):
         try:
             data = json.loads(frame_stripped)

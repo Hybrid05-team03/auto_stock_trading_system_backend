@@ -52,10 +52,24 @@ class RealtimeQuoteView(APIView):
         results = []
 
         for code in codes:
-            quote = fetch_realtime_quote("/tryitout/H0STCNT0", code, "H0STCNT0")
+            data = fetch_realtime_quote(
+                endpoint="/tryitout/",
+                symbol=code,
+                tr_id="H0STCNT0"
+            )
+
+            if not data:
+                results.append({"code": code, "error": "no data"})
+                continue
+
             results.append({
-                "code": code,
-                "quote": quote
+                "code": data["symbol"],
+                "price": data["price"],
+                "change": data["change"],
+                "change_sign": data["change_sign"],
+                "change_rate": data["change_rate"],
+                "trade_value": data["trade_value"],
+                "timestamp": data["timestamp"],
             })
         return Response({"quotes": results})
 

@@ -23,7 +23,6 @@ def fetch_realtime_quote(endpoint: str, symbol: str, tr_id: str) -> Optional[Dic
     approval_key = get_web_socket_key()
     ws = create_connection(WS_BASE_URL + endpoint, timeout=WS_CONNECT_TIMEOUT)
 
-    print("웹 소켓 키는: ", approval_key)
     try:
 
         # 연결 후 Subscription 메시지 보내기
