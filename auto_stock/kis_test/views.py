@@ -6,7 +6,7 @@ from .models import RealtimeSymbol
 from .serializers import RealtimeSymbolSerializer
 
 from kis.auth.kis_token import get_token
-from kis.api.price import fetch_price_series
+from kis.api.price import fetch_price_series, kis_get_index_last2
 from kis.websocket.quote_ws import fetch_realtime_quote
 from kis.websocket.index_ws import fetch_realtime_index
 
@@ -36,19 +36,18 @@ class RealtimeSymbolView(APIView):
         return Response(response_serializer.data, status=status_code)
 
 
-### kis/websocket 실시간 시세 조회
+### kis/websocket 실시간 시세 조회 (개별 종목)
 class RealtimeQuoteView(APIView):
     def get(self, request):
         raw_codes = request.query_params.get("codes", "")
         codes = [c.strip() for c in raw_codes.split(",") if c.strip()]
-
 
         if not codes:
             return Response(
                 {"detail": "Query parameter 'codes' is required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         # 종목 코드 ","로 구분하여 요청 (ex: 005930,000660)
         results = []
 
@@ -56,7 +55,7 @@ class RealtimeQuoteView(APIView):
             data = fetch_realtime_quote(
                 endpoint="/tryitout/",
                 symbol=code,
-                tr_id="H0STCNT0"
+                tr_id="H0STCNT0",
             )
 
             if not data:
@@ -72,10 +71,11 @@ class RealtimeQuoteView(APIView):
                 "trade_value": data["trade_value"],
                 "timestamp": data["timestamp"],
             })
+
         return Response({"quotes": results})
 
 
-## kis/api 가격 조회
+## kis/api 개별 종목 가격 조회 (일봉 시리즈)
 class DailyPriceView(APIView):
     def get(self, request):
         symbol = request.query_params.get("symbol")
@@ -93,42 +93,65 @@ class DailyPriceView(APIView):
                 status=status.HTTP_502_BAD_GATEWAY,
             )
         return Response({"symbol": symbol, "period": period, "series": series})
-    
 
-## Kis/websocket/index 실시간 조회
+#######################################################################################
+## KIS / 업종지수 요약 (REST + WebSocket 통합)
 class IndexView(APIView):
     def get(self, request):
         raw_codes = request.query_params.get("codes", "")
         codes = [c.strip() for c in raw_codes.split(",") if c.strip()]
-
 
         if not codes:
             return Response(
                 {"detail": "Query parameter 'codes' is required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
-        # 종목 코드 ","로 구분하여 요청 (ex: 005930,000660)
+
         results = []
 
         for code in codes:
-            data = fetch_realtime_index(
-                endpoint="/tryitout/",
-                code=code,
-                tr_id="H0UPCNT0"
+            # 1) REST 로 기본 데이터 (어제/오늘 종가 + 이름) 확보
+            base = kis_get_index_last2(code)
+
+            name = base.get("name")
+            today = base.get("today")        # {"date": "...", "close": ...} or None
+            yesterday = base.get("yesterday")
+
+            # 2) WebSocket으로 실시간 지수 시도 (장이 열려 있을 때만 성공)
+            ws_data = None
+            try:
+                ws_data = fetch_realtime_index(
+                    endpoint="/tryitout/",
+                    code=code,
+                    tr_id="H0UPCNT0",
+                )
+            except Exception as e:
+                # WS 실패는 치명적 에러로 보지 않고, 그냥 REST 값만 사용
+                print(f"[WS-INDEX ERROR] code={code}: {e}")
+
+            # 3) WS 성공 시 → today.close 를 WS price 로 덮어쓰기
+            if ws_data and "price" in ws_data:
+                today_date = None
+                if isinstance(today, dict) and "date" in today:
+                    today_date = today["date"]
+
+                try:
+                    ws_price = float(ws_data.get("price"))
+                except (TypeError, ValueError):
+                    ws_price = None
+
+                if ws_price is not None:
+                    today = {
+                        "date": today_date,
+                        "close": ws_price,
+                    }
+
+            results.append(
+                {
+                    "name": name,
+                    "today": today,
+                    "yesterday": yesterday,
+                }
             )
 
-            if not data:
-                results.append({"code": code, "error": "No data received, check the market time."})
-                continue
-
-            results.append({
-                "code": data["symbol"],
-                "price": data["price"],
-                "change": data["change"],
-                "change_sign": data["change_sign"],
-                "change_rate": data["change_rate"],
-                "trade_value": data["trade_value"],
-                "timestamp": data["timestamp"],
-            })
-        return Response({"quotes": results})
+        return Response({"indices": results})
