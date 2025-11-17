@@ -1,3 +1,11 @@
+전일 지수 종가 추산
+
+
+전일종가 = 현재가 - 전일대비
+stck_prdy_clpr = stck_clpr - prdy_vrss
+
+
+
 # Auto Stock Trading Backend
 
 이 프로젝트는 한국투자증권(KIS) 시세 API를 감싸는 Django REST 백엔드입니다.  
