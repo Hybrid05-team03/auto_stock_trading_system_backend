@@ -98,7 +98,7 @@ class DailyPriceView(APIView):
 ## Kis/websocket/index 실시간 조회
 class IndexView(APIView):
     def get(self, request):
-        raw_codes = request.query_params.get("index_code", "")
+        raw_codes = request.query_params.get("codes", "")
         codes = [c.strip() for c in raw_codes.split(",") if c.strip()]
 
 
@@ -114,12 +114,12 @@ class IndexView(APIView):
         for code in codes:
             data = fetch_realtime_index(
                 endpoint="/tryitout/",
-                symbol=code,
+                code=code,
                 tr_id="H0UPCNT0"
             )
 
             if not data:
-                results.append({"code": code, "error": "no data"})
+                results.append({"code": code, "error": "No data received, check the market time."})
                 continue
 
             results.append({
