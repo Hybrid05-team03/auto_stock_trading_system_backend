@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class RealtimeSymbol(models.Model):
     """
     Persist user-defined symbol metadata for realtime streaming.

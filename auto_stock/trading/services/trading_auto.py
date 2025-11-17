@@ -7,6 +7,7 @@ from trading.services.trading_rsi_calculate import calculate_rsi
 from trading.services.trading_strategy import determine_signal
 from kis.websocket.trading_ws import KISTRADING
 
+
 df_cache = {}
 trader = KISTRADING(dry_run=False)
 

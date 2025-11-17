@@ -7,7 +7,8 @@ from .serializers import RealtimeSymbolSerializer
 
 from kis.auth.kis_token import get_token
 from kis.api.price import fetch_price_series
-from kis.websocket.quote_ws import fetch_realtime_quote, REALTIME_TR_ID
+from kis.websocket.quote_ws import fetch_realtime_quote
+
 
 ## kis/auth 토큰 발급
 class TokenStatusView(APIView):
@@ -57,7 +58,6 @@ class RealtimeQuoteView(APIView):
                 "quote": quote
             })
         return Response({"quotes": results})
-
 
 
 ## kis/api 가격 조회

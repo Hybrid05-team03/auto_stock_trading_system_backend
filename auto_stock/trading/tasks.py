@@ -1,8 +1,10 @@
 # trading/tasks.py
-
 import logging
+
 from celery import shared_task
+
 from trading.services.trading_auto import auto_trade
+
 
 logger = logging.getLogger(__name__)
 

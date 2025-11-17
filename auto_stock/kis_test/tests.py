@@ -1,5 +1,6 @@
 from django.test import TestCase
 
+
 ## kis/auth 토큰 발급 테스트
 class DummyKisAuthTest(TestCase):
     def test_placeholder(self):
