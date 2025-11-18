@@ -20,7 +20,7 @@ env = os.getenv("DJANGO_ENV", "local")  # 기본값: local
 env_file = f".env.{env}"
 
 print(f"▶️ Using env: {env_file}")
-load_dotenv(dotenv_path=env_file)
+load_dotenv(dotenv_path=".env.local")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -53,7 +53,8 @@ INSTALLED_APPS = [
     ## user created apps
     'indices',
     'trading',
-    'kis_test'
+    'kis',
+    'kis_test',
 ]
 
 MIDDLEWARE = [
@@ -99,9 +100,13 @@ DATABASES = {
     }
 }
 
-# Celary
+
+# Celery
 CELERY_BROKER_URL = "redis://localhost:6379/0"
 CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+CELERY_TASK_RESULT_EXPIRES = 3600
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

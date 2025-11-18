@@ -4,14 +4,13 @@ from typing import Optional, Dict, Any
 from datetime import datetime, timedelta, timezone
 from websocket import WebSocketTimeoutException, WebSocketConnectionClosedException
 
-WS_CONNECT_TIMEOUT = float(os.getenv("INDICES_WS_CONNECT_TIMEOUT"))
-WS_MESSAGE_TIMEOUT = float(os.getenv("INDICES_WS_MESSAGE_TIMEOUT"))
-WS_CUST_TYPE = os.getenv("KIS_WS_CUSTOMER_TYPE")
+WS_CONNECT_TIMEOUT = float(os.getenv("INDICES_WS_CONNECT_TIMEOUT", "5"))
+WS_MESSAGE_TIMEOUT = float(os.getenv("INDICES_WS_MESSAGE_TIMEOUT", "5"))
+WS_CUST_TYPE = os.getenv("KIS_WS_CUSTOMER_TYPE", "P")
 KST = timezone(timedelta(hours=9))
 
-# --------------------------------------------------------------------
-# WebSocket 메시지 송수신
-# --------------------------------------------------------------------
+
+## KIS 웹 소켓 구독 요청
 def _send_subscription(ws, approval_key: str, tr_id: str, code: str, tr_type: str):
 
     message = {
