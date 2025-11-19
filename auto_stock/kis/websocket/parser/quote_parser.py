@@ -2,6 +2,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def parse_quote(raw: str) -> dict:
     try:
         parts = raw.split("|")
@@ -14,10 +15,9 @@ def parse_quote(raw: str) -> dict:
 
         return {
             "tr_id": tr_id,
-            "symbol": tr_key,
-            "time": fields[1],  # 예: HHMMSS 형식
-            "price": int(fields[2]),  # 현재가
-            # 필드 추가 가능: fields[3], fields[4], ...
+            "symbol": tr_key,                  # 종목 코드
+            "time": fields[1],                 # HHMMSS
+            "quote": int(fields[2]),           # 현재가
         }
     except Exception as e:
         logger.warning(f"[parse_quote] 파싱 실패: {e}")

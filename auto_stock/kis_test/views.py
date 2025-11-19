@@ -67,16 +67,20 @@ class RealtimeSymbolView(APIView):
         serializer.is_valid(raise_exception=True)
         payload = serializer.validated_data
 
+        # DB 저장 또는 갱신
         obj, created = RealtimeSymbol.objects.update_or_create(
             identifier=payload["identifier"],
-            defaults={"code": payload["code"], "name": payload.get("name", "")},
+            defaults={
+                "code": payload["code"],
+                "name": payload.get("name", "")
+            },
         )
 
-        # Redis 구독 요청 (quote 타입으로 고정)
+        # Redis 구독 요청 → WebSocket을 통한 실시간 시세 수신
         publish_subscription_request(
-            tr_id="H0STASP0",
-            tr_key=payload["code"],
-            sub_type="quote"
+            tr_id="H0STCNT0",         # 실시간 체결 시세
+            tr_key=payload["code"],   # 종목 코드
+            sub_type="price"          # 시세 타입
         )
 
         response_serializer = RealtimeSymbolSerializer(obj)
@@ -84,7 +88,7 @@ class RealtimeSymbolView(APIView):
         return Response(response_serializer.data, status=status_code)
 
 
-### tmp/websocket 실시간 시세 조회 (WebSocket)
+### tmp/websocket 실시간 시세 조회 (WebSocket- price)
 class RealtimeQuoteView(APIView):
     def get(self, request):
         raw_codes = request.query_params.get("codes", "")
@@ -98,14 +102,14 @@ class RealtimeQuoteView(APIView):
 
         results = []
         for code in codes: # 종목 코드 별 웹소켓 구독 요청
-            redis_key = f"quote:{code}"
+            redis_key = f"price:{code}"
             cached = r.get(redis_key)
 
             if not cached:
                 publish_subscription_request(
                     tr_id="H0STCNT0",
                     tr_key=code,
-                    sub_type="quote"
+                    sub_type="price"
                 )
                 results.append({"code": code, "status": "subscribe add requested"})
                 continue
@@ -114,10 +118,12 @@ class RealtimeQuoteView(APIView):
                 data = json.loads(cached)
                 results.append({
                     "code": data.get("symbol", code),
-                    "quote": data.get("quote"),
-                    "time": data.get("time"),
+                    "current_price": data.get("current_price"),
+                    "change_rate": data.get("change_rate"),
+                    "trade_value": data.get("trade_value"),
+                    "timestamp": data.get("timestamp"),
                 })
             except Exception:
                 results.append({"code": code, "error": "parse error"})
 
-        return Response({"quotes": results})
+        return Response(results, status=status.HTTP_200_OK)
