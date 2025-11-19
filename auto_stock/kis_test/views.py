@@ -56,38 +56,6 @@ def publish_subscription_request(tr_id: str, tr_key: str, sub_type: str):
     }))
 
 
-## kis/websocket 실시간 종목 조회 (WebSocket)
-class RealtimeSymbolView(APIView):
-    def get(self, request):
-        serializer = RealtimeSymbolSerializer(RealtimeSymbol.objects.all(), many=True)
-        return Response({"symbols": serializer.data})
-
-    def post(self, request):
-        serializer = RealtimeSymbolSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        payload = serializer.validated_data
-
-        # DB 저장 또는 갱신
-        obj, created = RealtimeSymbol.objects.update_or_create(
-            identifier=payload["identifier"],
-            defaults={
-                "code": payload["code"],
-                "name": payload.get("name", "")
-            },
-        )
-
-        # Redis 구독 요청 → WebSocket을 통한 실시간 시세 수신
-        publish_subscription_request(
-            tr_id="H0STCNT0",         # 실시간 체결 시세
-            tr_key=payload["code"],   # 종목 코드
-            sub_type="price"          # 시세 타입
-        )
-
-        response_serializer = RealtimeSymbolSerializer(obj)
-        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
-        return Response(response_serializer.data, status=status_code)
-
-
 ### tmp/websocket 실시간 시세 조회 (WebSocket- price)
 class RealtimeQuoteView(APIView):
     def get(self, request):
