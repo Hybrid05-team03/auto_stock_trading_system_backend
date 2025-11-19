@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 DailyPriceRow = Dict[str, Union[str, float, int]]
 
 # --------------------------------------------------------------------
-# 일별 시세 조회
+# 일별 시세 조회 (REST API)
 # --------------------------------------------------------------------
 def fetch_price_series(symbol: str, period: str = "D") -> List[DailyPriceRow]:
     path = "/uapi/domestic-stock/v1/quotations/inquire-daily-price"
@@ -47,7 +47,7 @@ def fetch_price_series(symbol: str, period: str = "D") -> List[DailyPriceRow]:
 
 
 # --------------------------------------------------------------------
-# 단일 시세 (현재가) 조회
+# 단일 시세 (현재가) 조회 (REST API)
 # --------------------------------------------------------------------
 def kis_get_realtime_price(symbol: str) -> float:
     """

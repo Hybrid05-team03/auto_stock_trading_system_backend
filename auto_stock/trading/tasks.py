@@ -1,16 +1,26 @@
-import logging
-
-from celery import shared_task
-from trading.services.rsi_decision import auto_trade
-
-# 로거 설정
-logger = logging.getLogger(__name__)
-
-# 주문 처리 로직 비동기 실행
-@shared_task(name="trading.run_auto_trading")
-def run_auto_trading(symbol: str):
-    try:
-        logger.info(f"[{symbol}] 자동매매 태스크를 시작합니다.")
-        auto_trade(symbol)
-    except Exception as e:
-        logger.error(f"[{symbol}] 자동매매 태스크 실행 중 오류 발생: {e}", exc_info=True)
+# # trading/tasks.py
+# import logging
+#
+# from trading.services.trading_auto import auto_trade
+#
+# from celery import shared_task
+# from tmp.websocket.manage.ws_manager import KISWebSocketManager
+# from trading.services.trading_ws_handler import realtime_price_callback
+#
+#
+# logger = logging.getLogger(__name__)
+#
+#
+# ## Celery Worker로 웹 소켓 연결 유지
+# @shared_task(name="trading.run_auto_trading")
+# def run_auto_trading():
+#
+#     manager = KISWebSocketManager(endpoint="/tryitout")  # KIS realtime endpoint (BASE_URL + endpoint + tr_id)
+#     manager.connect()
+#
+#     # 테스트 : 삼성, 하이닉스
+#     manager.subscribe("005930")
+#     manager.subscribe("000660")
+#
+#     # 무한 루프 실행
+#     manager.listen(on_message=realtime_price_callback)

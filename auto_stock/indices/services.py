@@ -1,13 +1,19 @@
 import os
 import time
+import json
+import redis
 from .symbols import INDICES
 
 from kis.api.util.request import request_get
-from kis.websocket.quote_ws import fetch_realtime_quote
 
 # 간단 캐시/스로틀: 잦은 새로고침 시 KIS 호출 제한
 _CACHE_TTL = int(os.getenv("INDICES_CACHE_TTL_SECONDS", "5"))
 _STATE = {"last_payload": None, "last_at": 0.0}
+REALTIME_TR_ID = os.getenv("REALTIME_TR_ID")
+
+
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 # ETF 대체 코드 (KRX)
 SYMBOLS = {
@@ -18,7 +24,7 @@ SYMBOLS = {
 }
 
 # 국내 일자별 시세
-TR_ID_DAILY = "FHKST01010400"
+TR_ID_DAILY = os.getenv("KIS_GET_TR_ID")
 PATH_DAILY  = "/uapi/domestic-stock/v1/quotations/inquire-daily-price"
 
 def _fetch_daily_5(code: str):
@@ -78,6 +84,25 @@ def get_indices_payload():
         return {"indices": []}
 
 
-def get_indices_realtime_payload():
-    quotes = fetch_realtime_quote(INDICES)
-    return {"quotes": quotes}
+def get_indices_realtime_payload(request):
+    raw_codes = request.query_params.get("codes", "")
+    codes = [c.strip() for c in raw_codes.split(",") if c.strip()]
+
+    if not codes:
+        raise ValueError("Query parameter 'codes' is required.")
+
+    results = []
+
+    for code in codes:
+        raw = r.get(f"price:{code}")  # ★ Redis에서 가장 최근 WebSocket 데이터 가져오기
+        if raw:
+            quote = json.loads(raw)
+        else:
+            quote = None
+
+        results.append({
+            "code": code,
+            "quote": quote,
+        })
+
+    return {"quotes": results}

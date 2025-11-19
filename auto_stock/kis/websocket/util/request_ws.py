@@ -2,7 +2,7 @@ import os
 import requests
 import pandas as pd
 
-from kis.api.util.request import _get_headers
+from kis.api_temp.util import _get_headers
 
 BASE_URL = os.getenv("KIS_BASE_URL")
 

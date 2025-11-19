@@ -2,13 +2,15 @@
 import logging
 
 from django.http import JsonResponse
-from rest_framework import status
+from drf_yasg.utils import swagger_auto_schema
+
+from rest_framework import status, serializers
 from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
 from rest_framework.response import Response
-from drf_yasg.utils import swagger_auto_schema
-from rest_framework import serializers
+
 from .services import get_indices_payload, get_indices_realtime_payload
+
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +68,7 @@ def indices_view(request):
 @renderer_classes([JSONRenderer, BrowsableAPIRenderer])
 def indices_realtime_view(request):
     try:
-        payload = get_indices_realtime_payload()
+        payload = get_indices_realtime_payload(request)
     except Exception as exc:
         logger.exception("Failed to fetch realtime indices: %s", exc)
         return Response(

@@ -1,26 +1,21 @@
 import requests
 import os
-import time
-
 from django.core.cache import cache
 
-BASE_URL = os.getenv("KIS_BASE_URL")
+from dotenv import load_dotenv
+load_dotenv(dotenv_path=".env.local")
+
+BASE_URL = os.getenv("KIS_BASE_URL", "https://openapivts.koreainvestment.com:29443")
 APP_KEY = os.getenv("KIS_APP_KEY")
 APP_SECRET = os.getenv("KIS_APP_SECRET")
 
 CACHED_TTL = 86400  # 24시간
 _WS_KEY_CACHE = {"approval_key": None, "approval_expires_at": 0}
 
-## key, secret 확인
-def _ensure_kis_credentials():
-    if not all([BASE_URL, APP_KEY, APP_SECRET]):
-        raise EnvironmentError("KIS 환경변수(KIS_BASE_URL, KIS_APP_KEY, KIS_APP_SECRET)가 설정되지 않았습니다.")
+APPROVAL_TTL = 60 * 60 * 12  # 12시간 (승인키는 최대 24시간 유효)
 
 
-## 웹소켓 승인 키 발급 요청
-def _fetch_web_socket_key() -> str:
-    _ensure_kis_credentials()
-
+def _fetch_approval_key():
     url = f"{BASE_URL}/oauth2/Approval"
     payload = {
         "grant_type": "client_credentials",
@@ -32,24 +27,18 @@ def _fetch_web_socket_key() -> str:
     response.raise_for_status()
     data = response.json()
 
-    approval_key = data.get("approval_key") or data.get("approvalKey")
-    expires_in = int(data.get("expires_in", CACHED_TTL))
+    approval_key = data.get("approval_key")
+    if not approval_key:
+        raise Exception(f"approval_key 응답 없음: {data}")
 
-    _WS_KEY_CACHE["approval_key"] = approval_key
-    _WS_KEY_CACHE["expires_at"] = time.time() + expires_in - 60  # 만료 1분 전까지 유효
-
+    cache.set("kis_approval_key", approval_key, timeout=APPROVAL_TTL)
     return approval_key
 
 
 ## 캐시된 웹소켓 승인 키 가져오기
 def get_web_socket_key(force_refresh=False) -> str:
-    socket_key = cache.get("kis_socket_key")
-    expires_at = cache.get("kis_socket_expires_at", 0)
-    expired = time.time() > expires_at
+    approval_key = cache.get("kis_approval_key")
 
-    if force_refresh or not socket_key or expired:
-        socket_key = _fetch_web_socket_key()
-        cache.set("kis_socket_key", socket_key, timeout=CACHED_TTL)
-        cache.set("kis_socket_expires_at", _WS_KEY_CACHE["expires_at"], timeout=CACHED_TTL)
-
-    return socket_key
+    if force_refresh or not approval_key:
+        approval_key = _fetch_approval_key()
+    return approval_key

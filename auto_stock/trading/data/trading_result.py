@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional, Literal
 
+
 @dataclass
 class TradeResult:
     """주문 결과 반환 형식"""

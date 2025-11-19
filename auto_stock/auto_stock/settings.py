@@ -10,12 +10,18 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# .env 파일 로드
-load_dotenv()
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+
+## 환경 변수 로드
+env = os.getenv("DJANGO_ENV", "local")  # 기본값: local
+env_file = f".env.{env}"
+
+print(f"▶️ Using env: {env_file}")
+load_dotenv(dotenv_path=".env.local")
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
@@ -45,13 +51,14 @@ INSTALLED_APPS = [
     'drf_yasg',
 
     ## user created apps
-    'common',
     'indices',
     'trading',
-    'kis_test'
+    'kis',
+    'kis_test',
 ]
 
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -59,6 +66,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
 ROOT_URLCONF = 'auto_stock.urls'
@@ -92,9 +100,13 @@ DATABASES = {
     }
 }
 
-# Celary
+
+# Celery
 CELERY_BROKER_URL = "redis://localhost:6379/0"
 CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+CELERY_TASK_RESULT_EXPIRES = 3600
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
