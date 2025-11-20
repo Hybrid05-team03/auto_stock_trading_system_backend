@@ -5,13 +5,14 @@ import websockets
 from kis.auth.kis_ws_key import get_web_socket_key
 from kis.websocket.parser.quote_parser import parse_quote
 from kis.websocket.parser.price_parser import parse_price
+from kis.websocket.parser.index_parser import parse_index
 
 # ------------------ 환경 설정 ------------------
 dotenv.load_dotenv(".env.local")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "auto_stock.settings")
 django.setup()
 
-WS_BASE_URL = os.getenv("KIS_WS_BASE_URL", "ws://ops.koreainvestment.com:31000")
+WS_BASE_URL = os.getenv("KIS_WS_BASE_URL")
 CUST_TYPE = os.getenv("KIS_WS_CUSTOMER_TYPE", "P")
 REDIS_TTL = 60
 REDIS_CHANNEL = "subscribe.add"
@@ -40,7 +41,7 @@ async def subscribe_worker(tr_id, tr_key, redis_key_prefix):
                     "input": {"tr_id": tr_id, "tr_key": tr_key}
                 }
             }))
-            logger.info(f"[ SUBSCRIBE START ]: {tr_id}  구독 시작 → {tr_key}")
+            logger.info(f" [ START ] 구독 시작 → {redis_key_prefix}:{tr_key}")
 
             while not stop_event.is_set():
                 raw = await ws.recv()
@@ -56,8 +57,18 @@ async def subscribe_worker(tr_id, tr_key, redis_key_prefix):
                     pass
 
                 try:
-                    parsed = parse_quote(raw) if redis_key_prefix == "quote" else parse_price(raw)
+                    if redis_key_prefix == "quote":
+                        parsed = parse_quote(raw)
+                    elif redis_key_prefix == "price": ## 시세 구독
+                        parsed = parse_price(raw)
+                    elif redis_key_prefix == "index": ## 지수 구독
+                        parsed = parse_index(raw)
+                    elif redis_key_prefix == "rank": ## 인기 종목 구독
+                        parsed = parse_price(raw)
+                    else:
+                        parsed = None
                     if parsed:
+                        logger.info(f"[PARSED INDEX] {parsed}")
                         r.set(redis_key, json.dumps(parsed), ex=REDIS_TTL)
                         logger.info(f"[WS:{tr_id}] 저장됨 → {redis_key}")
                 except Exception as e:
@@ -69,7 +80,7 @@ async def subscribe_worker(tr_id, tr_key, redis_key_prefix):
 async def redis_subscribe_listener():
     pubsub = r.pubsub()
     pubsub.subscribe(REDIS_CHANNEL)
-    logger.info(f"📡 Redis 구독 대기 중... 채널: {REDIS_CHANNEL}")
+    logger.info(f" [ INFO ] 구독 요청 대기 ")
 
     while not stop_event.is_set():
         message = pubsub.get_message()
@@ -82,7 +93,7 @@ async def redis_subscribe_listener():
 
                 key = (tr_id, tr_key)
                 if key in active_connections:
-                    logger.info(f"⚠️ 이미 구독 중: {key}")
+                    logger.info(f" [ WARN ] 중복 구독 요청 {redis_key_prefix}:{key}")
                     continue
 
                 asyncio.create_task(subscribe_worker(tr_id, tr_key, redis_key_prefix))
@@ -92,7 +103,7 @@ async def redis_subscribe_listener():
 
 # ------------------ 종료 처리 ------------------
 def handle_sigint():
-    logger.info("🛑 종료 요청 수신됨...")
+    logger.info(" [ WAIT ] 종료 수신 ")
     stop_event.set()
 
 signal.signal(signal.SIGINT, lambda sig, frame: handle_sigint())
@@ -105,4 +116,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     finally:
-        logger.info("✅ 정상 종료 완료")
+        logger.info(" [ EXIT ] 정상 종료 ")

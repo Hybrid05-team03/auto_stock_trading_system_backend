@@ -19,5 +19,5 @@ urlpatterns = [
 
     ## (서비스용) trading app
     # path('api_temp/trading/', include('trading.urls')),
-    path('api/market/', include('indices.urls')),
+    # path('api/market/', include('indices.urls')),
 ]
