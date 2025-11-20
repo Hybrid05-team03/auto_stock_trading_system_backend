@@ -31,10 +31,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-s0-0l8l_ng3bbcr0#0-j7o@kk3pj8+q7c=et*9vevlxextf7+j'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['*']
+CORS_ALLOW_HEADERS = ["*"]
+CORS_ALLOW_METHODS = ["*"]
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Application definition
 
@@ -55,6 +57,9 @@ INSTALLED_APPS = [
     'trading',
     'kis',
     'kis_test',
+
+    ## settings
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -67,6 +72,10 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_prometheus.middleware.PrometheusAfterMiddleware',
+
+    # cors
+    "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
 ]
 
 ROOT_URLCONF = 'auto_stock.urls'
@@ -87,7 +96,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'auto_stock.wsgi.application'
+# WSGI_APPLICATION = 'auto_stock.wsgi.application'
 
 
 # Database
@@ -142,7 +151,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "/static/"
+
+# STATIC_ROOT = BASE_DIR / "staticfiles"
+#
+# STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
