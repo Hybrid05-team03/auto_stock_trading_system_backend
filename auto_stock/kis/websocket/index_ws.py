@@ -22,32 +22,38 @@ INDEX_REALTIME_TR_ID = os.getenv("KIS_INDEX_WS_TR_ID")
 # --------------------------------------------------------------------
 # 실시간 시세 조회 (WebSocket)
 # --------------------------------------------------------------------
-def fetch_realtime_index(endpoint: str, code: str, tr_id: str) -> Optional[Dict[IndexTick]]:
+def fetch_realtime_index(endpoint: str, code: str, tr_id: str) -> Optional[IndexTick]:
     approval_key = get_web_socket_key()
     ws = create_connection(WS_BASE_URL + endpoint, timeout=WS_CONNECT_TIMEOUT)
 
-
-
-
     try:
+        # 구독 시작
+        _send_subscription(
+            ws,
+            approval_key=approval_key,
+            tr_id=tr_id,
+            code=code,
+            tr_type="1",
+        )
 
-        # 연결 후 Subscription 메시지 보내기
-        _send_subscription(ws, approval_key=approval_key,
-                           tr_id=tr_id, code=code, tr_type="1")
-
-        # 연결 테스트용 
+        # 1번은 테스트용으로 버림
         _wait_for_index_frame(ws, code, tr_id)
-        
-        # 실제 데이터 
-        result = _wait_for_index_frame(ws, code, tr_id)
-        
+
+        # 2번에서 실제 데이터
+        tick = _wait_for_index_frame(ws, code, tr_id)  # ⬅️ IndexTick 또는 None
+
+        # 구독 해제
         _send_subscription(ws, approval_key, tr_id, code, tr_type="2")
 
         ws.close()
 
-        if result:
-            logger.info(f"[WS] {code}: {result['price']} @ {result['timestamp']}")
-        return result
+        if tick:
+            # 여기서 dict처럼 쓰지 말고, 필드로 접근
+            logger.info(
+                f"[WS] {code}: prpr_nmix={tick.prpr_nmix}, "
+                f"prdy_ctrt={tick.prdy_ctrt}, time={tick.bsop_hour}"
+            )
+        return tick
 
     except Exception as e:
         logger.error(f"[WS ERROR] {code}: {e}")

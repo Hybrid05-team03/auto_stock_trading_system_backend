@@ -17,7 +17,7 @@ class TokenStatusView(APIView):
         return Response(get_token())
 
 
-## kis/websocket 실시간 종목 조회
+## kis/websocket 실시간 종목 조회 
 class RealtimeSymbolView(APIView):
     def get(self, request):
         serializer = RealtimeSymbolSerializer(RealtimeSymbol.objects.all(), many=True)
@@ -110,15 +110,15 @@ class IndexView(APIView):
         results = []
 
         for code in codes:
-            # 1) REST 로 기본 데이터 (어제/오늘 종가 + 이름) 확보
+            # 1) REST 기본 데이터
             base = kis_get_index_last2(code)
 
             name = base.get("name")
             today = base.get("today")        # {"date": "...", "close": ...} or None
             yesterday = base.get("yesterday")
 
-            # 2) WebSocket으로 실시간 지수 시도 (장이 열려 있을 때만 성공)
-            ws_data = None
+            # 2) WS 실시간 지수
+            ws_data: Optional[IndexTick] = None
             try:
                 ws_data = fetch_realtime_index(
                     endpoint="/tryitout/",
@@ -126,17 +126,18 @@ class IndexView(APIView):
                     tr_id="H0UPCNT0",
                 )
             except Exception as e:
-                # WS 실패는 치명적 에러로 보지 않고, 그냥 REST 값만 사용
                 print(f"[WS-INDEX ERROR] code={code}: {e}")
 
-            # 3) WS 성공 시 → today.close 를 WS price 로 덮어쓰기
-            if ws_data and "price" in ws_data:
+            # 3) WS 성공 시 today.close를 실시간 값으로 덮어쓰기
+            if ws_data is not None:
+                # today 에 이미 date 있으면 살리고, 없으면 None
                 today_date = None
-                if isinstance(today, dict) and "date" in today:
-                    today_date = today["date"]
+                if isinstance(today, dict):
+                    today_date = today.get("date")
 
                 try:
-                    ws_price = float(ws_data.get("price"))
+                    # 현재 지수: prpr_nmix
+                    ws_price = float(ws_data.prpr_nmix)
                 except (TypeError, ValueError):
                     ws_price = None
 
