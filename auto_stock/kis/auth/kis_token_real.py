@@ -1,18 +1,16 @@
-import os
-import time
-import requests
-
-from typing import Any, Dict, Optional
-
-from django.core.cache import cache
+import os, requests, redis, logging
 
 BASE_URL = os.getenv("KIS_BASE_URL_REAL")
 APP_KEY = os.getenv("KIS_APP_KEY_REAL")
 APP_SECRET = os.getenv("KIS_APP_SECRET_REAL")
 
-TTL = 3600
+TOKEN_KEY_REAL = "kis_access_token_real"
+TTL = 23 * 3600   # 23시간 TTL
 
-_TOKEN_CACHE: Dict[str, Optional[Any]] = {"access_token": None, "expires_at": 0.0}
+r = redis.Redis(decode_responses=True)
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 ## 토큰 발급
@@ -23,26 +21,26 @@ def _fetch_token() -> str:
         "appkey": APP_KEY,
         "appsecret": APP_SECRET,
     }
-    response = requests.post(url, json=payload, timeout=10)
-    response.raise_for_status()
-    data = response.json()
-    access_token = data.get("access_token") or data.get("accessToken")
-    expires_in = int(data.get("expires_in", TTL))
-    _TOKEN_CACHE["access_token"] = access_token
-    _TOKEN_CACHE["expires_at"] = time.time() + expires_in - 60
-    return access_token
+
+    r_resp = requests.post(url, json=payload, timeout=10)
+    r_resp.raise_for_status()
+    data = r_resp.json()
+
+    token_real = data.get("access_token") or data.get("accessToken")
+
+    # Redis 캐싱 만료 (TTL=23시간)
+    r.set(TOKEN_KEY_REAL, token_real, ex=TTL)
+    logger.info("[TOKEN] KIS 실전 토큰 신규 발급 ")
+
+    return token_real
 
 
 ## 캐시된 토큰 가져오기
-def get_token(force_refresh=False):
-    token = cache.get("kis_access_token")
-    expires_at = cache.get("kis_token_expires_at", 0)
-    expired = time.time() > expires_at
+def get_token():
+    token_real = r.get(TOKEN_KEY_REAL)
 
-    # cache miss: 토큰 발급
-    if force_refresh or not token or expired:
-        token = _fetch_token()
-        cache.set("kis_access_token", token, timeout=TTL)
-        cache.set("kis_token_expires_at", _TOKEN_CACHE["expires_at"], timeout=TTL)
+    if token_real:
+        logger.info("[TOKEN] 캐싱된 KIS 실전 토큰 사용")
+        return token_real
 
-    return token
+    return _fetch_token()

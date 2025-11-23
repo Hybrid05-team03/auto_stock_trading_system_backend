@@ -68,7 +68,7 @@ class RealtimeQuoteView(APIView):
             return Response({"detail": "codes is required"}, status=400)
 
         # 종목명 매핑
-        symbols = load_top10_symbols()
+        symbols = fetch_top10_symbols(10)
         symbol_map = {item["code"]: item["name"] for item in symbols}
 
         results = []
@@ -129,6 +129,7 @@ class RealtimeQuoteView(APIView):
             "currentPrice": data.get("current_price"),
             "changePercent": data.get("change_rate"),
             "volume": data.get("trade_value"),
+            "marketCap": data.get("market_cap"),  # 시가 총액
             "source": "cache" if cached else "realtime"
         }
 
