@@ -1,31 +1,20 @@
-import os, json, redis, logging, time
+import os, redis, logging
+import numpy as np
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from kis.auth.kis_token import get_token
 from kis.api.price import fetch_price_series, get_or_set_index_yesterday
-from kis.constants.const_index import INDEX_CODE_NAME_MAP
 from kis.api.rank import fetch_top10_symbols
+from kis.websocket.util.kis_data_save import subscribe_and_get_data
+from kis.constants.const_index import INDEX_CODE_NAME_MAP, ETF_INDEX_MAP
 
 
 logger = logging.getLogger(__name__)
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
-
-
-# ------------------------------------------------------------
-# Redis Pub/Sub → WebSocket 구독 요청 발행
-# ------------------------------------------------------------
-def publish_subscription_request(tr_id: str, tr_key: str, sub_type: str):
-    r.publish("subscribe.add", json.dumps({
-        "action": "subscribe",
-        "tr_id": tr_id,
-        "tr_key": tr_key,
-        "type": sub_type
-    }))
-
 
 # ------------------------------------------------------------
 # Token View
@@ -57,40 +46,29 @@ class DailyPriceView(APIView):
 # 실시간 시세 조회 (WebSocket → Redis)
 # ------------------------------------------------------------
 class RealtimeQuoteView(APIView):
-
     def get(self, request):
         raw_codes = request.query_params.get("codes", "")
         codes = [c.strip() for c in raw_codes.split(",") if c.strip()]
-
         if not codes:
             return Response({"detail": "codes is required"}, status=400)
 
-        # 종목명 매핑
         symbols = fetch_top10_symbols(10)
         symbol_map = {item["code"]: item["name"] for item in symbols}
 
         results = []
-
         for code in codes:
-            redis_key = f"price:{code}"
-
-            ## 캐싱 데이터 확인
-            cached = r.get(redis_key)
-            if cached:
-                cached_dict = json.loads(cached)
-                results.append(self._format_result(cached_dict, code, symbol_map))
-                continue
-
-
-            ## Cache Miss : KIS Websocket 요청
-            publish_subscription_request("H0STCNT0", code, "price")
-
-            ## 새 데이터 대기 + fallback
-            data = self._wait_for_redis(redis_key, timeout=10)
+            data = subscribe_and_get_data("H0STCNT0", code, "price", timeout=10)
 
             if data:
-                results.append(self._format_result(data, code, symbol_map))
-            else: ## timeout
+                results.append({
+                    "name": symbol_map.get(code, code),
+                    "code": code,
+                    "price": data.get("current_price"),
+                    "currentPrice": data.get("current_price"),
+                    "changePercent": data.get("change_rate"),
+                    "volume": data.get("trade_value"),
+                })
+            else:
                 results.append({
                     "name": symbol_map.get(code, code),
                     "code": code,
@@ -99,72 +77,42 @@ class RealtimeQuoteView(APIView):
 
         return Response({"stock": results}, status=200)
 
-    ## Redis 대기 +  fallback
-    def _wait_for_redis(self, redis_key, timeout=10):
-        start = time.time()
 
-        # 1. 새 데이터 대기
-        while time.time() - start < timeout:
-            val = r.get(redis_key)
-            if val:
-                return json.loads(val)
-            time.sleep(0.2)
-
-        # 2. timeout시 캐싱 데이터 있다면 fallback
-        val = r.get(redis_key)
-        if val:
-            return json.loads(val)
-
-        # 3. 소켓, 캐싱 데이터 모두 없는 경우
-        return None
-
-    ## 응답 변환
-    def _format_result(self, data: dict, code, symbol_map):
-        return {
-            "name": symbol_map.get(code, code),
-            "code": code,
-            "price": data.get("current_price"), # 시가 총액 (TODO 따로 받아서 쓸 예정)
-            "currentPrice": data.get("current_price"),
-            "changePercent": data.get("change_rate"),
-            "volume": data.get("trade_value"),
-        }
-
-
-## TODO 지수 조회 수정 필요
+## 지수 조회
 class RealtimeIndexView(APIView):
     def get(self, request):
-        timeout = 2
-        start = time.time()
-
         results = []
-        timestamps = []
 
+        # 국내 지수(코스피,코스닥,환율)
         for code, name in INDEX_CODE_NAME_MAP.items():
-            yesterday_price = get_or_set_index_yesterday(code)
+            yesterday = get_or_set_index_yesterday(code)
+            ws_data = subscribe_and_get_data("H0UPCNT0", code, "index", timeout=3)
 
-            while time.time() - start < timeout:
-                redis_key = f"index:{code}"
-                cached = r.get(redis_key)
+            if ws_data and ws_data.get("price"):
+                results.append({
+                    "name": name,
+                    "yesterday": yesterday,
+                    "today": ws_data["price"],
+                })
 
-                if not cached:
-                    time.sleep(0.2)
-                    continue
+        # 나스닥(임시 ETF 기반) REST 요청
+        nasdaq_info = ETF_INDEX_MAP["nasdaq"]
+        code = nasdaq_info["code"]
+        name = nasdaq_info["name"]
 
-                try:
-                    data = json.loads(cached)
-                    results.append({
-                        "name": name,
-                        "yesterday": yesterday_price,
-                        "today": data.get("price")
-                    })
-                    timestamps.append(data.get("timestamp"))
-                    break
-                except:
-                    time.sleep(0.2)
+        series = fetch_price_series(code)
+        yesterday = series[1]["close"] if len(series) > 1 else None
+        today = series[0]["close"] if series else None
 
-        if len(results) == len(INDEX_CODE_NAME_MAP):
-            return Response({"indices": results}, status=200)
+        if today is not None:
+            results.append({
+                "name": name,
+                "yesterday": yesterday,
+                "today": today,
+            })
 
+        if len(results) >= 3:
+            return Response({"indices": results})
         return Response({"message": "incomplete index data"}, status=204)
 
 

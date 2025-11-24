@@ -12,7 +12,7 @@ dotenv.load_dotenv(".env.local")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "auto_stock.settings")
 django.setup()
 
-WS_BASE_URL = os.getenv("KIS_WS_BASE_URL")
+WS_BASE_URL_REAL = os.getenv("KIS_WS_BASE_URL_REAL")
 CUST_TYPE = os.getenv("KIS_WS_CUSTOMER_TYPE", "P")
 REDIS_TTL = 60
 REDIS_CHANNEL = "subscribe.add"
@@ -174,7 +174,7 @@ async def main_websocket():
     global shared_ws
 
     approval_key = get_web_socket_key()
-    async with websockets.connect(WS_BASE_URL) as ws:
+    async with websockets.connect(WS_BASE_URL_REAL) as ws:
         shared_ws = ws
         logger.info("[WS] 연결 완료")
 

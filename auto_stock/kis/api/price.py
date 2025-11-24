@@ -13,8 +13,6 @@ r = redis.Redis(decode_responses=True)  # Redis 연결 (기본)
 DailyPriceRow = Dict[str, Union[str, float, int]]
 
 
-DailyPriceRow = Dict[str, Union[str, float, int]]
-
 # --------------------------------------------------------------------
 # 일별 시세 조회 (REST API)
 # --------------------------------------------------------------------
