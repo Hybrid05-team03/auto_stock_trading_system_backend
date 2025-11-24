@@ -1,8 +1,10 @@
-import os
-
+import os, logging
 import numpy as np
 import pandas as pd
-from kis.api.util.request import request_get
+
+from kis.api.util.request_real import request_get
+
+logger = logging.getLogger(__name__)
 
 def kis_get_last_quote(symbol: str, count: int = 100) -> pd.DataFrame:
     """
@@ -43,6 +45,23 @@ def kis_get_price_rest(symbol: str) -> float:
     try:
         res = request_get(path, tr_id, params)
         price = res.get("output", {}).get("stck_prpr")
+        return float(price) if price else np.nan
+    except:
+        return np.nan
+
+
+## 시가 총액 조회
+def kis_get_market_cap(symbol: str) -> float:
+    path = "/uapi/domestic-stock/v1/quotations/inquire-price"
+    tr_id = os.getenv("KIS_TR_ID")
+    params = {
+        "FID_COND_MRKT_DIV_CODE": "J",
+        "FID_INPUT_ISCD": symbol,
+    }
+
+    try:
+        res = request_get(path, tr_id, params)
+        price = res.get("output", {}).get("hts_avls")
         return float(price) if price else np.nan
     except:
         return np.nan

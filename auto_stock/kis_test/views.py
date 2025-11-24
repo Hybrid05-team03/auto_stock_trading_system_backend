@@ -1,12 +1,13 @@
 import os, redis, logging
-import numpy as np
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from kis.auth.kis_token import get_token
 from kis.api.price import fetch_price_series, get_or_set_index_yesterday
+from kis.api.quote import kis_get_market_cap
 from kis.api.rank import fetch_top10_symbols
+from kis.data.search_code import mapping_code_to_name
 from kis.websocket.util.kis_data_save import subscribe_and_get_data
 from kis.constants.const_index import INDEX_CODE_NAME_MAP, ETF_INDEX_MAP
 
@@ -52,25 +53,23 @@ class RealtimeQuoteView(APIView):
         if not codes:
             return Response({"detail": "codes is required"}, status=400)
 
-        symbols = fetch_top10_symbols(10)
-        symbol_map = {item["code"]: item["name"] for item in symbols}
-
         results = []
         for code in codes:
             data = subscribe_and_get_data("H0STCNT0", code, "price", timeout=10)
-
+            stock_name = mapping_code_to_name(code)
             if data:
-                results.append({
-                    "name": symbol_map.get(code, code),
+                result_item = {
+                    "name": stock_name,
                     "code": code,
-                    "price": data.get("current_price"),
+                    "price": kis_get_market_cap(code),
                     "currentPrice": data.get("current_price"),
                     "changePercent": data.get("change_rate"),
                     "volume": data.get("trade_value"),
-                })
+                }
+                results.append(result_item)
             else:
                 results.append({
-                    "name": symbol_map.get(code, code),
+                    "name": stock_name,
                     "code": code,
                     "status": "timeout and no cached data"
                 })
