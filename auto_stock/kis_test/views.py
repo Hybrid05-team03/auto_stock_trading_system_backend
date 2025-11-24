@@ -1,7 +1,5 @@
 import os, json, redis, logging, time
-from datetime import datetime
 
-from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -80,7 +78,7 @@ class RealtimeQuoteView(APIView):
             cached = r.get(redis_key)
             if cached:
                 cached_dict = json.loads(cached)
-                results.append(self._format_result(cached_dict, code, symbol_map, cached=True))
+                results.append(self._format_result(cached_dict, code, symbol_map))
                 continue
 
 
@@ -88,11 +86,11 @@ class RealtimeQuoteView(APIView):
             publish_subscription_request("H0STCNT0", code, "price")
 
             ## 새 데이터 대기 + fallback
-            data = self._wait_for_redis(redis_key, timeout=10.0)
+            data = self._wait_for_redis(redis_key, timeout=10)
 
             if data:
-                results.append(self._format_result(data, code, symbol_map, cached=False))
-            else:
+                results.append(self._format_result(data, code, symbol_map))
+            else: ## timeout
                 results.append({
                     "name": symbol_map.get(code, code),
                     "code": code,
@@ -101,40 +99,38 @@ class RealtimeQuoteView(APIView):
 
         return Response({"stock": results}, status=200)
 
-    ## Redis 대기 with fallback
+    ## Redis 대기 +  fallback
     def _wait_for_redis(self, redis_key, timeout=10):
         start = time.time()
 
-        # 1) 새로운 데이터 대기
+        # 1. 새 데이터 대기
         while time.time() - start < timeout:
             val = r.get(redis_key)
             if val:
                 return json.loads(val)
             time.sleep(0.2)
 
-        # 2) timeout 발생했어도 기존 데이터 있으면 fallback
+        # 2. timeout시 캐싱 데이터 있다면 fallback
         val = r.get(redis_key)
         if val:
             return json.loads(val)
 
-        # 3) 진짜 없으면 None
+        # 3. 소켓, 캐싱 데이터 모두 없는 경우
         return None
 
     ## 응답 변환
-    def _format_result(self, data: dict, code, symbol_map, cached=False):
+    def _format_result(self, data: dict, code, symbol_map):
         return {
             "name": symbol_map.get(code, code),
             "code": code,
-            "price": data.get("current_price"),
+            "price": data.get("current_price"), # 시가 총액 (TODO 따로 받아서 쓸 예정)
             "currentPrice": data.get("current_price"),
             "changePercent": data.get("change_rate"),
             "volume": data.get("trade_value"),
-            "marketCap": data.get("market_cap"),  # 시가 총액
-            "source": "cache" if cached else "realtime"
         }
 
 
-## 지수 조회
+## TODO 지수 조회 수정 필요
 class RealtimeIndexView(APIView):
     def get(self, request):
         timeout = 2
