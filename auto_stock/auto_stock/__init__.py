@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 # 현재 파일: auto_stock/__init__.py
 ROOT_DIR = Path(__file__).resolve().parent.parent
-ENV_FILE = ROOT_DIR / ".env"
+ENV_FILE = ROOT_DIR / ".env.local"
 
 load_dotenv(ENV_FILE)
 
