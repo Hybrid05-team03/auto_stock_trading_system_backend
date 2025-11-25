@@ -30,18 +30,18 @@ class OrderCreateView(APIView):
                 ui_map[code] = {
                     "name": stock_name,
                     "symbol": code,
-                    "currentPrice": data.get("current_price"),
-                    "targetPrice": kis_get_market_cap(code),
-                    "changePercent": data.get("change_rate"),
+                    "current_price": data.get("current_price"),
+                    "target_price": kis_get_market_cap(code),
+                    "change_percent": data.get("change_rate"),
                     "volume": data.get("trade_value"),
                 }
             else:
                 ui_map[code] = {
                     "name": stock_name,
                     "symbol": code,
-                    "currentPrice": None,
-                    "targetPrice": None,
-                    "changePercent": None,
+                    "current_price": None,
+                    "target_price": None,
+                    "change_percent": None,
                     "volume": None,
                 }
 
