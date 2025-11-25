@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 # .env 자동 로딩
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-load_dotenv(os.path.join(BASE_DIR, "..", ".env"))
+load_dotenv(os.path.join(BASE_DIR, "..", ".env.local"))
 
 ## django settings.py
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "auto_stock.settings")

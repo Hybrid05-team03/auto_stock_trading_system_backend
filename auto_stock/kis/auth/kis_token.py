@@ -1,21 +1,18 @@
-import os
-import time
-import requests
-
-from typing import Any, Dict, Optional
-
-from django.core.cache import cache
+import os, requests, redis, logging
 
 BASE_URL = os.getenv("KIS_BASE_URL")
 APP_KEY = os.getenv("KIS_APP_KEY")
 APP_SECRET = os.getenv("KIS_APP_SECRET")
 
-TTL = 3600
+TOKEN_KEY = "kis_access_token"
+TTL = 23 * 3600   # 23시간 TTL
 
-_TOKEN_CACHE: Dict[str, Optional[Any]] = {"access_token": None, "expires_at": 0.0}
+r = redis.Redis(decode_responses=True)
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
-## 토큰 발급
 def _fetch_token() -> str:
     url = f"{BASE_URL}/oauth2/tokenP"
     payload = {
@@ -23,26 +20,26 @@ def _fetch_token() -> str:
         "appkey": APP_KEY,
         "appsecret": APP_SECRET,
     }
-    response = requests.post(url, json=payload, timeout=10)
-    response.raise_for_status()
-    data = response.json()
-    access_token = data.get("access_token") or data.get("accessToken")
-    expires_in = int(data.get("expires_in", TTL))
-    _TOKEN_CACHE["access_token"] = access_token
-    _TOKEN_CACHE["expires_at"] = time.time() + expires_in - 60
-    return access_token
 
+    r_resp = requests.post(url, json=payload, timeout=10)
+    r_resp.raise_for_status()
+    data = r_resp.json()
 
-## 캐시된 토큰 가져오기
-def get_token(force_refresh=False):
-    token = cache.get("kis_access_token")
-    expires_at = cache.get("kis_token_expires_at", 0)
-    expired = time.time() > expires_at
+    token = data.get("access_token") or data.get("accessToken")
 
-    # cache miss: 토큰 발급
-    if force_refresh or not token or expired:
-        token = _fetch_token()
-        cache.set("kis_access_token", token, timeout=TTL)
-        cache.set("kis_token_expires_at", _TOKEN_CACHE["expires_at"], timeout=TTL)
+    # Redis 캐싱 (TTL=23시간)
+    r.set(TOKEN_KEY, token, ex=TTL)
+    logger.info("[TOKEN] KIS 모의 토큰 신규 발급")
 
     return token
+
+
+def get_token() -> str:
+    token = r.get(TOKEN_KEY)
+
+    if token:
+        logger.info("[TOKEN] 캐싱된 KIS 모의 토큰 사용")
+        return token
+
+    # 캐시 없으면 자동 새 발급
+    return _fetch_token()
