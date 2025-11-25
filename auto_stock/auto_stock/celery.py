@@ -16,14 +16,6 @@ app.config_from_object("django.conf:settings", namespace="CELERY")
 
 app.autodiscover_tasks()
 
-app.conf.beat_schedule = {
-    "start-websocket-manager-once": {
-        "task": "tmp.websocket.manage.ws_connect.start_ws_manager",
-        "schedule": 10.0,
-        "options": {"queue": "websocket"},
-    }
-}
-
 @app.task(bind=True)
 def debug_task(self):
     print(f"Request: {self.request!r}")

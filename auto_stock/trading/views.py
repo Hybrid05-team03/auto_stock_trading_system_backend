@@ -8,7 +8,7 @@ from .serializers import OrderRequestSerializer
 from kis.api.quote import kis_get_market_cap
 from kis.data.search_code import mapping_code_to_name
 from kis.websocket.util.kis_data_save import subscribe_and_get_data
-
+from trading.tasks import process_order
 
 class OrderCreateView(APIView):
     ## 주문 기록 목록 조회
@@ -56,7 +56,7 @@ class OrderCreateView(APIView):
                 "targetPrice": info.get("target_price"),
                 "strategy": order.strategy.upper(),
                 "changePercent": info.get("change_percent"),
-                "status": "매수중"
+                "status": order.status
             })
 
         return Response(response_list, status=200)
@@ -68,7 +68,28 @@ class OrderCreateView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()  # DB 저장
 
+        # KIS 주문 요청 비동기 처리
+        process_order.delay(serializer.instance.id)
+
         return Response(
             {"message": "주문 요청 처리되었습니다."},
             status=status.HTTP_201_CREATED,
         )
+
+
+# -------------------------------------------------------
+# 실시간 자동매매 시작 (Celery 트리거)
+# -------------------------------------------------------
+# @api_view(["POST"])
+# def start_auto_trading(request):
+#     symbol = request.query_params.get("code")
+#
+#     if not symbol:
+#         return Response({"error": "code 쿼리 파라미터가 필요합니다."}, status=400)
+#
+#     run_auto_trading.delay(symbol)
+#
+#     return Response({
+#         "message": f"{symbol} 자동매매 작업이 Celery 워커에서 실행됩니다.",
+#         "symbol": symbol
+#     })
