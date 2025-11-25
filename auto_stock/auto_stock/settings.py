@@ -14,6 +14,8 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
+import pymysql
+pymysql.install_as_MySQLdb()
 
 ## 환경 변수 로드
 env = os.getenv("DJANGO_ENV", "local")  # 기본값: local
@@ -102,10 +104,21 @@ TEMPLATES = [
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'hb05',
+        'USER': 'django_user',
+        'PASSWORD': '1234!',
+        'HOST': '127.0.0.1',
+        'PORT': '3306'
     }
 }
 

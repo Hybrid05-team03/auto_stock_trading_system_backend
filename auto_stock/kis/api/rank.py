@@ -6,7 +6,7 @@ from kis.api.util.request_real import request_get
 def fetch_top10_symbols(count:int):
 
     path = "/uapi/domestic-stock/v1/ranking/market-cap"
-    tr_id = os.getenv("KIS_MARKET_CAP")
+    tr_id = os.getenv("KIS_RANK_GET")
     params = {
         "fid_cond_mrkt_div_code": "J",  # 코스피
         "fid_cond_scr_div_code": "20174",
