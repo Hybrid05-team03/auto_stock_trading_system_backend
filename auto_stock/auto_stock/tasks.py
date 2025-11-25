@@ -1,4 +1,4 @@
-# # auto_stock/tasks.py
+# # auto_stock/trade_process.py
 #
 # from celery import shared_task
 # from kis.websocket.manage.ws_manager import KISWebSocketManager

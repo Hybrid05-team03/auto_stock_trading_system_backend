@@ -15,6 +15,13 @@ app = Celery("auto_stock")
 app.config_from_object("django.conf:settings", namespace="CELERY")
 
 app.autodiscover_tasks()
+app.conf.beat_schedule.update({
+    "auto-rsi-trading-every-5-min": {
+        "task": "trading.tasks.auto_trade.auto_trade",
+        "schedule": 300,
+        "options": {"queue": "trading"},
+    }
+})
 
 @app.task(bind=True)
 def debug_task(self):

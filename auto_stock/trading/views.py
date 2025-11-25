@@ -1,6 +1,5 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
 
 from .models import OrderRequest
 from .serializers import OrderRequestSerializer
@@ -8,7 +7,7 @@ from .serializers import OrderRequestSerializer
 from kis.api.quote import kis_get_market_cap
 from kis.data.search_code import mapping_code_to_name
 from kis.websocket.util.kis_data_save import subscribe_and_get_data
-from trading.tasks import process_order
+from trading.tasks.auto_trade import auto_trade
 
 class OrderCreateView(APIView):
     ## 주문 기록 목록 조회
@@ -68,13 +67,10 @@ class OrderCreateView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()  # DB 저장
 
-        # KIS 주문 요청 비동기 처리
-        process_order.delay(serializer.instance.id)
+        # 자동 매매 태스크 실행
+        auto_trade.delay(serializer.instance.id)
 
-        return Response(
-            {"message": "주문 요청 처리되었습니다."},
-            status=status.HTTP_201_CREATED,
-        )
+        return Response({"message": "주문 요청이 접수되었습니다."}, status=201)
 
 
 # -------------------------------------------------------
