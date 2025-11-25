@@ -8,8 +8,11 @@ from kis.api.quote import kis_get_market_cap
 from kis.data.search_code import mapping_code_to_name
 from kis.websocket.util.kis_data_save import subscribe_and_get_data
 from trading.tasks.auto_trade import auto_trade
+from kis.websocket.trading_ws import order_buy, order_sell
 
-class OrderCreateView(APIView):
+
+## 자동 매매
+class AutoOrderCreateView(APIView):
     ## 주문 기록 목록 조회
     def get(self, request):
         orders = OrderRequest.objects.all().order_by("-created_at")
@@ -73,19 +76,39 @@ class OrderCreateView(APIView):
         return Response({"message": "주문 요청이 접수되었습니다."}, status=201)
 
 
-# -------------------------------------------------------
-# 실시간 자동매매 시작 (Celery 트리거)
-# -------------------------------------------------------
-# @api_view(["POST"])
-# def start_auto_trading(request):
-#     symbol = request.query_params.get("code")
-#
-#     if not symbol:
-#         return Response({"error": "code 쿼리 파라미터가 필요합니다."}, status=400)
-#
-#     run_auto_trading.delay(symbol)
-#
-#     return Response({
-#         "message": f"{symbol} 자동매매 작업이 Celery 워커에서 실행됩니다.",
-#         "symbol": symbol
-#     })
+## 수동 매수
+class ManualBuyView(APIView):
+    def post(self, request):
+        symbol = request.data.get("symbol")
+        qty = int(request.data.get("qty", 0))
+        order_type = request.data.get("order_type", "market")
+
+        if not symbol or qty <= 0:
+            return Response({"error": "symbol, qty 필요"}, status=400)
+
+        result = order_buy(symbol, qty, order_type=order_type)
+
+        return Response({
+            "ok": result.ok,
+            "message": result.message,
+            "order_id": result.order_id,
+        })
+
+
+## 수동 매도
+class ManualSellView(APIView):
+    def post(self, request):
+        symbol = request.data.get("symbol")
+        qty = int(request.data.get("qty", 0))
+        order_type = request.data.get("order_type", "market")
+
+        if not symbol or qty <= 0:
+            return Response({"error": "symbol, qty 필요"}, status=400)
+
+        result = order_sell(symbol, qty, order_type=order_type)
+
+        return Response({
+            "ok": result.ok,
+            "message": result.message,
+            "order_id": result.order_id,
+        })
