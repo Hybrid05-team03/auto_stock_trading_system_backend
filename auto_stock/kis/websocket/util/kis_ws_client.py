@@ -1,5 +1,4 @@
 import os, asyncio, json, redis, signal, logging
-import django, dotenv
 import websockets
 
 from kis.auth.kis_ws_key import get_web_socket_key
@@ -7,11 +6,7 @@ from kis.websocket.parser.quote_parser import parse_quote
 from kis.websocket.parser.price_parser import parse_price
 from kis.websocket.parser.index_parser import parse_index
 
-# ------------------ 환경 설정 ------------------
-dotenv.load_dotenv(".env.local")
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "auto_stock.settings")
-django.setup()
-
+# ------------------ 환경 변수 ------------------
 WS_BASE_URL_REAL = os.getenv("KIS_WS_BASE_URL_REAL")
 CUST_TYPE = os.getenv("KIS_WS_CUSTOMER_TYPE", "P")
 REDIS_TTL = 60

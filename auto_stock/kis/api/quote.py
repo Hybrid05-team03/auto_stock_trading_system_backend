@@ -6,6 +6,7 @@ from kis.api.util.request_real import request_get
 
 logger = logging.getLogger(__name__)
 
+
 def kis_get_last_quote(symbol: str, count: int = 100) -> pd.DataFrame:
     """
     REST: 과거 일봉 조회

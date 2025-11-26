@@ -1,18 +1,10 @@
 import os
 import logging
-
-import django, dotenv
-
 from datetime import date, timedelta
 
 from kis.api.util.request import request_get
 
 logger = logging.getLogger(__name__)
-
-dotenv.load_dotenv(".env.local")
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "auto_stock.settings")
-django.setup()
-
 
 # 업종코드 → 업종명 매핑 (필요하면 계속 추가)
 INDEX_CODE_NAME_MAP = {

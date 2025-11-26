@@ -2,8 +2,6 @@ import requests
 import os
 from django.core.cache import cache
 
-from dotenv import load_dotenv
-load_dotenv(dotenv_path=".env.local")
 
 BASE_URL = os.getenv("KIS_BASE_URL", "https://openapivts.koreainvestment.com:29443")
 APP_KEY = os.getenv("KIS_APP_KEY")

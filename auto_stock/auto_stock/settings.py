@@ -22,7 +22,7 @@ env = os.getenv("DJANGO_ENV", "local")  # 기본값: local
 env_file = f".env.{env}"
 
 print(f"▶️ Using env: {env_file}")
-load_dotenv(dotenv_path=".env.local")
+load_dotenv(dotenv_path=".env")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
