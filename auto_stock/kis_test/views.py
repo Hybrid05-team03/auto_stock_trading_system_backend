@@ -5,11 +5,12 @@ from rest_framework.views import APIView
 
 from kis.auth.kis_token import get_token
 from kis.api.price import fetch_price_series, get_or_set_index_yesterday
+from kis.api.index import fetch_overseas_index_snapshot
 from kis.api.quote import kis_get_market_cap
 from kis.api.rank import fetch_top10_symbols
 from kis.data.search_code import mapping_code_to_name
 from kis.websocket.util.kis_data_save import subscribe_and_get_data
-from kis.constants.const_index import INDEX_CODE_NAME_MAP, ETF_INDEX_MAP
+from kis.constants.const_index import INDEX_CODE_NAME_MAP, OVERSEAS_INDEX_CODE_NAME_MAP
 
 
 logger = logging.getLogger(__name__)
@@ -77,12 +78,14 @@ class RealtimeQuoteView(APIView):
         return Response({"stock": results}, status=200)
 
 
-## 지수 조회
+# ------------------------------------------------------------
+# 실시간 지수 조회 (WebSocket + REST)
+# ------------------------------------------------------------
 class RealtimeIndexView(APIView):
     def get(self, request):
         results = []
 
-        # 국내 지수(코스피,코스닥,환율)
+        # 1) 국내 지수 2종 (코스피/코스닥) - WebSocket
         for code, name in INDEX_CODE_NAME_MAP.items():
             yesterday = get_or_set_index_yesterday(code)
             ws_data = subscribe_and_get_data("H0UPCNT0", code, "index", timeout=3)
@@ -94,23 +97,19 @@ class RealtimeIndexView(APIView):
                     "today": ws_data["price"],
                 })
 
-        # 나스닥(임시 ETF 기반) REST 요청
-        nasdaq_info = ETF_INDEX_MAP["nasdaq"]
-        code = nasdaq_info["code"]
-        name = nasdaq_info["name"]
+        # 2) 해외 지수 2종 (달러환율 / 나스닥100) - REST
+        for index_key in OVERSEAS_INDEX_CODE_NAME_MAP.keys():
+            snap = fetch_overseas_index_snapshot(index_key)
+            if not snap:
+                continue
 
-        series = fetch_price_series(code)
-        yesterday = series[1]["close"] if len(series) > 1 else None
-        today = series[0]["close"] if series else None
-
-        if today is not None:
             results.append({
-                "name": name,
-                "yesterday": yesterday,
-                "today": today,
+                "name": snap["name"],
+                "yesterday": snap.get("yesterday"),
+                "today": snap["today"],
             })
 
-        if len(results) >= 3:
+        if results:
             return Response({"indices": results})
         return Response({"message": "incomplete index data"}, status=204)
 
