@@ -24,7 +24,6 @@ CANO, ACNT_PRDT_CD = ACCOUNT_NO.split("-")
 def _send_order(symbol: str, type: Type, qty: int, price: int,
                 order_type: OrderType, dry_run: bool = False) -> TradeResult:
 
-    # TODO: RSI 계산가로 변경 예정
     if order_type == "market":
         price = 0
 
@@ -83,15 +82,15 @@ def _send_order(symbol: str, type: Type, qty: int, price: int,
         return TradeResult(False, type, symbol, qty, price, order_type, message=str(e))
 
 
-## 매수
-def order_buy(symbol: str, qty: int, price: int = 0,
-              order_type: OrderType = "limit",
-              dry_run: bool = False) -> TradeResult:
-    return _send_order(symbol, "BUY", qty, price, order_type, dry_run)
-
-
 ## 매도
 def order_sell(symbol: str, qty: int, price: int = 0,
                order_type: OrderType = "limit",
                dry_run: bool = False) -> TradeResult:
+    return _send_order(symbol, "BUY", qty, price, order_type, dry_run)
+
+
+## 매수
+def order_buy(symbol: str, qty: int, price: int = 0,
+              order_type: OrderType = "limit",
+              dry_run: bool = False) -> TradeResult:
     return _send_order(symbol, "SELL", qty, price, order_type, dry_run)

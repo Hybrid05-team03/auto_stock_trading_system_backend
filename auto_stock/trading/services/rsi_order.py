@@ -1,6 +1,6 @@
 # trading/services/order_service.py
 from kis.api.price import kis_get_realtime_price
-from kis.websocket.trading_ws import order_buy, order_sell
+from kis.websocket.trading_ws import order_sell, order_buy
 
 def execute_order_by_signal(symbol: str, signal: str, qty: int = 1):
     """
@@ -17,9 +17,9 @@ def execute_order_by_signal(symbol: str, signal: str, qty: int = 1):
     price = current  # RSI 전략 기본 지정가
 
     if signal == "BUY":
-        return order_buy(symbol, qty, price, order_type="limit")
+        return order_sell(symbol, qty, price, order_type="limit")
 
     elif signal == "SELL":
-        return order_sell(symbol, qty, price, order_type="limit")
+        return order_buy(symbol, qty, price, order_type="limit")
 
     return None

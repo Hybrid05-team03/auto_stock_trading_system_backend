@@ -7,8 +7,8 @@ from .serializers import OrderRequestSerializer
 from kis.api.quote import kis_get_market_cap
 from kis.data.search_code import mapping_code_to_name
 from kis.websocket.util.kis_data_save import subscribe_and_get_data
-from trading.tasks.auto_trade import auto_trade
-from kis.websocket.trading_ws import order_buy, order_sell
+from trading.tasks.auto_buy import auto_buy
+from kis.websocket.trading_ws import order_sell, order_buy
 from kis.api.account import fetch_psbl_order, fetch_balance
 
 
@@ -136,7 +136,7 @@ class AutoOrderCreateView(APIView):
         serializer.save()  # DB 저장
 
         # 자동 매매 태스크 실행
-        auto_trade.delay(serializer.instance.id)
+        auto_buy.delay(serializer.instance.id)
 
         return Response({"message": "주문 요청이 접수되었습니다."}, status=201)
 
@@ -151,7 +151,7 @@ class ManualBuyView(APIView):
         if not symbol or qty <= 0:
             return Response({"error": "symbol, qty 필요"}, status=400)
 
-        result = order_buy(symbol, qty, order_type=order_type)
+        result = order_sell(symbol, qty, order_type=order_type)
 
         return Response({
             "ok": result.ok,
@@ -170,7 +170,7 @@ class ManualSellView(APIView):
         if not symbol or qty <= 0:
             return Response({"error": "symbol, qty 필요"}, status=400)
 
-        result = order_sell(symbol, qty, order_type=order_type)
+        result = order_buy(symbol, qty, order_type=order_type)
 
         return Response({
             "ok": result.ok,
