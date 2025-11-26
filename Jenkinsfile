@@ -45,13 +45,13 @@ pipeline {
                         
                         cd ${PROJECT_DIR}/auto_stock
 
-                        sudo -E ${VENV}/bin/python manage.py makemigrates
-                        sudo -E ${VENV}/bin/python manage.py migrate
+                        sudo -E ${VENV}/bin/python3.11 manage.py makemigrates
+                        sudo -E ${VENV}/bin/python3.11 manage.py migrate
 
                         # 환경변수가 메모리에 주입된 상태로 프로세스가 뜹니다.
                         sudo -E nohup ${VENV}/bin/celery -A auto_stock worker -l info > ../celery_worker.log 2>&1 &
                         sudo -E nohup ${VENV}/bin/celery -A auto_stock beat -l info > ../celery_beat.log 2>&1 &
-                        sudo -E nohup ${VENV}/bin/python -m kis.websocket.util.kis_ws_client > ../ws_client.log 2>&1 &
+                        sudo -E nohup ${VENV}/bin/python3.11 -m kis.websocket.util.kis_ws_client > ../ws_client.log 2>&1 &
 
                         # Uvicorn 실행
                         sudo -E nohup ${VENV}/bin/uvicorn auto_stock.asgi:application --host 0.0.0.0 --port 8000 > ../uvicorn.log 2>&1 &
