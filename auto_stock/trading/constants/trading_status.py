@@ -1,0 +1,6 @@
+ORDER_REQUEST_STATUS = [
+    'PENDING',
+    'PROCESSING',
+    'SUCCESS',
+    'FAIL',
+]

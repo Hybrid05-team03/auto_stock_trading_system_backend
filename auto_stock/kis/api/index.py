@@ -1,6 +1,5 @@
 import os
 import logging
-
 import django, dotenv
 from kis.api.util.overseas_index import extract_overseas_index_daily_price
 from kis.constants.const_index import OVERSEAS_INDEX_CODE_NAME_MAP
@@ -13,9 +12,10 @@ from datetime import date, timedelta
 
 logger = logging.getLogger(__name__)
 
-dotenv.load_dotenv(".env.local")
+dotenv.load_dotenv(".env")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "auto_stock.settings")
 django.setup()
+
 
 
 
