@@ -2,6 +2,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def parse_price(raw: str) -> dict:
     try:
         parts = raw.split("|")
