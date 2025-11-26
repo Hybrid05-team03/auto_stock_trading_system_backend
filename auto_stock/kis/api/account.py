@@ -1,4 +1,4 @@
-import os, logging
+import os, logging, json
 
 from kis.api.util.request import request_get
 
@@ -46,43 +46,41 @@ def fetch_psbl_order(symbol: str):
 ## 계좌 보유 잔고 조회 (모의)
 def fetch_balance():
     path = "/uapi/domestic-stock/v1/trading/inquire-balance"
-    tr_id = "VTTC8434R"   # 모의 계좌 잔고조회 TR-ID
+    tr_id = "VTTC8434R"
 
     params = {
-        "CANO": CANO,
-        "ACNT_PRDT_CD": ACNT_PRDT_CD,
+        "CANO": 50156403,
+        "ACNT_PRDT_CD": "01",
         "AFHR_FLPR_YN": "N",
         "INQR_DVSN": "01",
         "UNPR_DVSN": "01",
         "FUND_STTL_ICLD_YN": "N",
         "FNCG_AMT_AUTO_RDPT_YN": "N",
-        "PRCS_DVSN": "01",
-        "CTX_AREA_FK100": "",
-        "CTX_AREA_NK100": "",
+        "OVRS_ICLD_YN": "N",
     }
 
-    try:
-        data = request_get(path, tr_id, params)
+    data = request_get(path, tr_id, params)
 
-        balance_info = {
-            "cash": data.get("output2", [{}])[0].get("prvs_rcdl_excc_amt", 0),
-            "stocks": []
-        }
+    print("🔍 RAW OUTPUT1:", data.get("output1"))
+    print("FULL RESPONSE:", json.dumps(data, indent=2, ensure_ascii=False))
 
-        stock_list = data.get("output1", [])
+    # 보유 종목 리스트
+    stocks = []
+    for s in data.get("output1", []):
+        stocks.append({
+            "symbol": s["pdno"],
+            "name": s["prdt_name"],
+            "quantity": int(s["hldg_qty"]),
+            "sell_psbl_qty": int(s["ord_psbl_qty"]),
+            "current_price": int(s["prpr"]),
+            "eval_amt": int(s["evlu_amt"]),
+        })
 
-        for s in stock_list:
-            balance_info["stocks"].append({
-                "symbol": s.get("pdno"),                          # 종목코드
-                "name": s.get("prdt_name"),                       # 종목명
-                "quantity": int(s.get("hldg_qty", 0)),            # 보유수량
-                "sell_psbl_qty": int(s.get("sell_psbl_qty", 0)),  # 매도가능수량
-                "current_price": int(s.get("prpr", 0)),           # 현재가
-                "eval_amt": int(s.get("evlu_amt", 0)),            # 평가금액
-            })
+    # 예수금
+    output2 = data.get("output2", [{}])
+    cash = int(output2[0].get("prvs_rcdl_excc_amt", 0))
 
-        return balance_info
-
-    except Exception as e:
-        logger.error(f"[KIS ERROR] ERROR : {e}")
-        return None
+    return {
+        "cash": cash,
+        "stocks": stocks
+    }

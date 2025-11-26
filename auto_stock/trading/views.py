@@ -32,6 +32,7 @@ class IsPossibleSellView(APIView):
         # 해당 종목 검색
         target = next((item for item in stocks if item["symbol"] == symbol), None)
 
+        print(f"=======  보유 종목 : {target}")
         if not target:
             return Response({
                 "symbol": symbol,

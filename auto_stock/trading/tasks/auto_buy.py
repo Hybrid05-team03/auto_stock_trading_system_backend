@@ -3,7 +3,7 @@ import logging
 from auto_stock.celery import app
 from trading.models import OrderRequest
 from trading.services.rsi_process import get_rsi_signal
-from kis.websocket.trading_ws import order_sell
+from kis.websocket.trading_ws import order_buy
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +19,7 @@ def auto_buy(order_id):
     order.save()
 
     # RSI 계산
-    signal, rsi = get_rsi_signal(order.symbol, period=14)
-
+    signal, rsi = get_rsi_signal(order.symbol, period=20)
     if signal != "BUY":
         order.status = "FAIL"
         order.message = f"매수 신호 없음 (RSI={rsi})"
@@ -29,7 +28,7 @@ def auto_buy(order_id):
         return
 
     # 시장가 매수
-    result = order_sell(order.symbol, qty=order.quantity, order_type="market")
+    result = order_buy(order.symbol, qty=order.quantity, order_type="market")
 
     # DB 저장
     if result.ok:
