@@ -63,10 +63,8 @@ class RealtimeQuoteView(APIView):
 
         for code in codes:
             if is_market_open:
-                print("[WS] WebSocket 데이터 사용")
                 data = subscribe_and_get_data("H0STCNT0", code, "price", timeout=10)
             else:
-                print("[REST] 캐싱된 데이터 사용")
                 data = get_cached_data(code, "price")
 
             stock_name = mapping_code_to_name(code)
