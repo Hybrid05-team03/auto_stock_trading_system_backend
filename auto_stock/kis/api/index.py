@@ -5,23 +5,49 @@ from kis.api.util.overseas_index import extract_overseas_index_daily_price
 from kis.constants.const_index import OVERSEAS_INDEX_CODE_NAME_MAP
 from kis.api.util.request_real import request_get
 
-
-from typing import List, Dict, Optional, Any, Tuple
 from datetime import date, timedelta
+from typing import List, Dict, Optional, Any, Tuple
 
 
-logger = logging.getLogger(__name__)
+def fetch_yesterday_close(code: str) -> float | None:
+    path = "/uapi/domestic-stock/v1/quotations/inquire-daily-indexchartprice"
+    tr_id = os.getenv("KIS_INDEX_DAILY_TR_ID", "FHKUP03500100")
 
-dotenv.load_dotenv(".env")
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "auto_stock.settings")
-django.setup()
+    today_d = date.today()
+    start_d = today_d - timedelta(days=10)
+
+    params = {
+        "FID_COND_MRKT_DIV_CODE": "U",  # 지수
+        "FID_INPUT_ISCD": code,
+        "FID_INPUT_DATE_1": start_d.strftime("%Y%m%d"),
+        "FID_INPUT_DATE_2": today_d.strftime("%Y%m%d"),
+        "FID_PERIOD_DIV_CODE": "D",
+    }
+
+    try:
+        data = request_get(path, tr_id, params)
+    except Exception as e:
+        logger.error(f"[KIS INDEX ERROR] Failed to fetch index {code}: {e}")
+        return None
+
+    rows = data.get("output2") or []
+    if len(rows) < 2:
+        logger.warning(f"[KIS INDEX] Not enough data for code={code}")
+        return None
+
+    try:
+        yest_row = sorted(rows, key=lambda r: r["stck_bsop_date"])[-2]
+        return float(yest_row["bstp_nmix_prpr"])
+    except Exception as e:
+        logger.warning(f"[KIS INDEX] Failed to parse yesterday price for {code}: {e}")
+        return None
 
 
-
-
-###### 현재 사용되지 않고 있음 ##############
-def kis_get_index_last2(code: str) -> dict:
-    path = os.getenv("KIS_BASE_URL")
+def fetch_domestic_index_snapshot(code: str) -> Optional[Dict[str, Optional[float]]]:
+    """
+    국내 지수 일별 조회로 오늘/어제 종가를 한 번에 가져온다.
+    """
+    path = "/uapi/domestic-stock/v1/quotations/inquire-daily-indexchartprice"
     tr_id = os.getenv("KIS_INDEX_DAILY_TR_ID", "FHKUP03500100")
 
     today_d = date.today()
@@ -38,34 +64,29 @@ def kis_get_index_last2(code: str) -> dict:
     try:
         data = request_get(path, tr_id, params)
     except Exception as e:
-        logger.error(f"[KIS INDEX ERROR] Failed to fetch index {code}: {e}")
-        return {"today": None, "yesterday": None}
+        logger.error(f"[KIS INDEX ERROR] Failed to fetch domestic index {code}: {e}")
+        return None
 
-    rows = data.get("output2", [])
-    if not rows:
-        return {"today": None, "yesterday": None}
+    rows = data.get("output2") or []
+    if len(rows) < 1:
+        logger.warning(f"[KIS INDEX] Not enough data for code={code}")
+        return None
 
-    parsed = []
-    for row in rows:
-        ymd = row.get("stck_bsop_date")
-        price_str = row.get("bstp_nmix_prpr")
-        if not ymd or not price_str:
-            continue
-        try:
-            close = float(price_str)
-            parsed.append({"date": ymd, "close": close})
-        except:
-            continue
+    try:
+        sorted_rows = sorted(rows, key=lambda r: r["stck_bsop_date"])
+        today_close = float(sorted_rows[-1]["bstp_nmix_prpr"])
+        y_close = float(sorted_rows[-2]["bstp_nmix_prpr"]) if len(sorted_rows) > 1 else None
+        return {"today": today_close, "yesterday": y_close}
+    except Exception as e:
+        logger.warning(f"[KIS INDEX] Failed to parse today/yesterday for {code}: {e}")
+        return None
 
-    if len(parsed) < 2:
-        return {"today": None, "yesterday": None}
 
-    parsed.sort(key=lambda r: r["date"])
-    return {
-        "today": parsed[-1],
-        "yesterday": parsed[-2]
-    }
+logger = logging.getLogger(__name__)
 
+dotenv.load_dotenv(".env")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "auto_stock.settings")
+django.setup()
 
 
 
