@@ -19,8 +19,8 @@ def auto_buy(order_id):
     order.save()
 
     # RSI 계산
-    signal, rsi = get_rsi_signal(order.symbol, period=20)
-    print(f"auto buy 디버깅 {signal, rsi}")
+    signal, rsi = get_rsi_signal(order.symbol, 20, order.risk)
+
     if signal != "BUY":
         order.status = "FAIL"
         order.message = f"매수 신호 없음 (RSI={rsi})"

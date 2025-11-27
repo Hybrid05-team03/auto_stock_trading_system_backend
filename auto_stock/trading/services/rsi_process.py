@@ -58,7 +58,18 @@ def calculate_rsi(prices, period: int = 14):
 
 
 ## 계산 후 매매 신호 생성
-def get_rsi_signal(symbol: str, period: int = 14):
+def get_rsi_signal(symbol: str, period: int, risk: str):
+    VALID_RISK = {"low", "mid", "high"}
+
+    if risk not in VALID_RISK:
+        raise ValueError(f"Invalid risk value: {risk}")
+
+    thresholds = {
+        "low": 40,
+        "mid": 35,
+        "high": 30,
+    }
+    buy_thr = thresholds[risk]
     prices = fetch_price_series(symbol)
 
     if not prices:
@@ -70,9 +81,4 @@ def get_rsi_signal(symbol: str, period: int = 14):
     if rsi is None:
         return None, None
 
-    if rsi < 40:
-        return "BUY", rsi
-    elif rsi > 60:
-        return "SELL", rsi
-    else:
-        return None, rsi
+    return ("BUY", rsi) if rsi < buy_thr else (None, rsi)

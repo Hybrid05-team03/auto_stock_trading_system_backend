@@ -136,6 +136,11 @@ class AutoOrderCreateView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()  # DB 저장
 
+        # TODO 매수 검증 로직 추가
+        # inquire - psbl - order : 해당 종목이 시장에서 매수 가능한 지 검증
+        # 사용자 계좌 정보 추가
+        # 잔고를 받아, 매수 가능한지 검증
+
         # 자동 매매 태스크 실행
         auto_buy.delay(serializer.instance.id)
 

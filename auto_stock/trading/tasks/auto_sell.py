@@ -27,7 +27,7 @@ def auto_sell():
             continue
 
         time.sleep(1.2)
-        signal, rsi = get_rsi_signal(symbol, period=14)
+        signal, rsi = get_rsi_signal(symbol, 14, "low")
 
         logger.info(f"[AUTO-SELL] 종목={symbol}, 보유수량={qty}, RSI={rsi}, 신호={signal}")
 

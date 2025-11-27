@@ -103,7 +103,7 @@ TEMPLATES = [
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-## 로컬 환경 데이터베이스
+# # 로컬 환경 데이터베이스
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.mysql',
@@ -115,7 +115,7 @@ TEMPLATES = [
 #     }
 # }
 
-## 배포 환경 데이터베이스
+# 배포 환경 데이터베이스
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
