@@ -1,6 +1,5 @@
-import pandas as pd
-
 from kis.api.price import fetch_price_series
+
 
 ## RSI 지표 계산
 def get_rsi(symbol: str, period: int = 14):
@@ -29,11 +28,6 @@ def calculate_rsi(prices, period: int = 14):
 
     return round(float(rsi), 2)
 
-
-## 계산 후 매매 신호 생성
-import pandas as pd
-
-from kis.api.price import fetch_price_series
 
 ## RSI 지표 계산
 def get_rsi(symbol: str, period: int = 14):
@@ -70,7 +64,7 @@ def get_rsi_signal(symbol: str, period: int = 14):
     if not prices:
         return None, None
 
-    closes = [row["close"] for row in prices]   # ← 수정 필요
+    closes = [row["close"] for row in prices]
     rsi = calculate_rsi(closes, period=period)
 
     if rsi is None:

@@ -142,7 +142,7 @@ class AutoOrderCreateView(APIView):
         return Response({"message": "주문 요청이 접수되었습니다."}, status=201)
 
 
-## 수동 매수
+## 수동 매도
 class ManualBuyView(APIView):
     def post(self, request):
         symbol = request.data.get("symbol")
@@ -152,7 +152,7 @@ class ManualBuyView(APIView):
         if not symbol or qty <= 0:
             return Response({"error": "symbol, qty 필요"}, status=400)
 
-        result = order_sell(symbol, qty, order_type=order_type)
+        result = order_buy(symbol, qty, order_type=order_type)
 
         return Response({
             "ok": result.ok,
@@ -161,7 +161,7 @@ class ManualBuyView(APIView):
         })
 
 
-## 수동 매도
+## 수동 매수(buy)
 class ManualSellView(APIView):
     def post(self, request):
         symbol = request.data.get("symbol")
@@ -171,7 +171,7 @@ class ManualSellView(APIView):
         if not symbol or qty <= 0:
             return Response({"error": "symbol, qty 필요"}, status=400)
 
-        result = order_buy(symbol, qty, order_type=order_type)
+        result = order_sell(symbol, qty, order_type=order_type)
 
         return Response({
             "ok": result.ok,

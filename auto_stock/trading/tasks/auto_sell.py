@@ -1,4 +1,4 @@
-import logging
+import logging, time
 
 from auto_stock.celery import app
 from kis.api.account import fetch_balance
@@ -13,17 +13,20 @@ logger = logging.getLogger(__name__)
 def auto_sell():
     balance = fetch_balance()
 
+    print(f"확인 ----- {balance}")
     if not balance or "stocks" not in balance:
         logger.info("[AUTO-SELL] 보유 종목 없음")
         return
 
-    for item in balance["stocks"]:
+    top_stocks = balance["stocks"][:3]
+    for item in top_stocks:
         symbol = item["symbol"]
-        qty = item["qty"]
+        qty = item["quantity"]
 
         if qty <= 0:
             continue
 
+        time.sleep(1.2)
         signal, rsi = get_rsi_signal(symbol, period=14)
 
         logger.info(f"[AUTO-SELL] 종목={symbol}, 보유수량={qty}, RSI={rsi}, 신호={signal}")

@@ -49,14 +49,17 @@ def fetch_balance():
     tr_id = "VTTC8434R"
 
     params = {
-        "CANO": 50156403,
+        "CANO": "50156403",
         "ACNT_PRDT_CD": "01",
         "AFHR_FLPR_YN": "N",
-        "INQR_DVSN": "01",
+        "INQR_DVSN": "02",
         "UNPR_DVSN": "01",
         "FUND_STTL_ICLD_YN": "N",
         "FNCG_AMT_AUTO_RDPT_YN": "N",
-        "OVRS_ICLD_YN": "N",
+        "PRCS_DVSN": "00",
+        "OFL_YN": "N",
+        "CTX_AREA_FK100": "",
+        "CTX_AREA_NK100": "",
     }
 
     data = request_get(path, tr_id, params)
