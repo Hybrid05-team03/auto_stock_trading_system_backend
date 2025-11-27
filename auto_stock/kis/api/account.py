@@ -49,8 +49,8 @@ def fetch_balance():
     tr_id = "VTTC8434R"
 
     params = {
-        "CANO": "50156403",
-        "ACNT_PRDT_CD": "01",
+        "CANO": CANO,
+        "ACNT_PRDT_CD": ACNT_PRDT_CD,
         "AFHR_FLPR_YN": "N",
         "INQR_DVSN": "02",
         "UNPR_DVSN": "01",
