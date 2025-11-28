@@ -4,7 +4,7 @@ import time
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from kis.auth.kis_token import get_token
+from kis.auth.kis_token_real import get_token
 from kis.api.price import fetch_price_series, get_or_set_index_yesterday
 from kis.api.index import fetch_overseas_index_snapshot, fetch_domestic_index_snapshot
 from kis.api.quote import kis_get_market_cap
@@ -107,15 +107,16 @@ class RealtimeIndexView(APIView):
                 ws_data = subscribe_and_get_data("H0UPCNT0", code, "index", timeout=3)
                 today_price = ws_data.get("price") if ws_data else None
             else:
-                # 장 마감 후: 캐시된 WebSocket 데이터 우선, 없으면 REST로 대체 조회
+                # 장 마감 후: 캐시된 WebSocket 데이터 조회
                 cached = get_cached_data(code, "index")
                 today_price = cached.get("price") if cached else None
-                if today_price is None:
-                    # REST 일별 지수 조회로 보충 (최신 종가와 어제 종가)
-                    snap = fetch_domestic_index_snapshot(code)
-                    if snap:
-                        today_price = snap.get("today")
-                        yesterday = snap.get("yesterday") or yesterday
+            ### REST 방식 보강
+            #    if today_price is None:
+            #        # REST 일별 지수 조회로 보충 (최신 종가와 어제 종가)
+            #        snap = fetch_domestic_index_snapshot(code)
+            #        if snap:
+            #            today_price = snap.get("today")
+            #            yesterday = snap.get("yesterday") or yesterday
 
             if today_price is not None:
                 results.append({

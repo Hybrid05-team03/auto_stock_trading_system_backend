@@ -14,7 +14,7 @@ django.setup()
 # ------------------ 환경 변수 ------------------
 WS_BASE_URL_REAL = os.getenv("KIS_WS_BASE_URL_REAL")
 CUST_TYPE = os.getenv("KIS_WS_CUSTOMER_TYPE", "P")
-REDIS_TTL = 60
+REDIS_TTL = 60 * 60 * 18  # 18시간 (장 마감 후 다음날 아침까지 데이터 유지)
 REDIS_CHANNEL = "subscribe.add"
 
 r = redis.Redis(decode_responses=True)
