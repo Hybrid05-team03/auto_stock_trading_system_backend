@@ -40,3 +40,17 @@ def subscribe_and_get_data(tr_id: str, tr_key: str, redis_prefix: str, timeout=1
         time.sleep(0.2)
 
     return None
+
+
+def get_cached_data(tr_key: str, redis_prefix: str):
+    """
+    구독 요청 없이 Redis에 캐시된 데이터만 조회
+    """
+    redis_key = f"{redis_prefix}:{tr_key}"
+    cached = r.get(redis_key)
+    if cached:
+        try:
+            return json.loads(cached)
+        except json.JSONDecodeError:
+            pass
+    return None

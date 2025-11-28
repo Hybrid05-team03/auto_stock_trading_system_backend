@@ -136,13 +136,18 @@ class AutoOrderCreateView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()  # DB 저장
 
+        # TODO 매수 검증 로직 추가
+        # inquire - psbl - order : 해당 종목이 시장에서 매수 가능한 지 검증
+        # 사용자 계좌 정보 추가
+        # 잔고를 받아, 매수 가능한지 검증
+
         # 자동 매매 태스크 실행
         auto_buy.delay(serializer.instance.id)
 
         return Response({"message": "주문 요청이 접수되었습니다."}, status=201)
 
 
-## 수동 매수
+## 수동 매도
 class ManualBuyView(APIView):
     def post(self, request):
         symbol = request.data.get("symbol")
@@ -152,7 +157,7 @@ class ManualBuyView(APIView):
         if not symbol or qty <= 0:
             return Response({"error": "symbol, qty 필요"}, status=400)
 
-        result = order_sell(symbol, qty, order_type=order_type)
+        result = order_buy(symbol, qty, order_type=order_type)
 
         return Response({
             "ok": result.ok,
@@ -161,7 +166,7 @@ class ManualBuyView(APIView):
         })
 
 
-## 수동 매도
+## 수동 매수(buy)
 class ManualSellView(APIView):
     def post(self, request):
         symbol = request.data.get("symbol")
@@ -171,7 +176,7 @@ class ManualSellView(APIView):
         if not symbol or qty <= 0:
             return Response({"error": "symbol, qty 필요"}, status=400)
 
-        result = order_buy(symbol, qty, order_type=order_type)
+        result = order_sell(symbol, qty, order_type=order_type)
 
         return Response({
             "ok": result.ok,

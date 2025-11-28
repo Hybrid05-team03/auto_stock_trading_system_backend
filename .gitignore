@@ -15,3 +15,6 @@ secrets.json
 
 # Environments
 auto_stock/.env.*
+
+# settings.py
+settings.py

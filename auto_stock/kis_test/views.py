@@ -1,4 +1,5 @@
 import os, redis, logging
+import time
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,8 +10,9 @@ from kis.api.index import fetch_overseas_index_snapshot
 from kis.api.quote import kis_get_market_cap
 from kis.api.rank import fetch_top10_symbols
 from kis.data.search_code import mapping_code_to_name
-from kis.websocket.util.kis_data_save import subscribe_and_get_data
+from kis.websocket.util.kis_data_save import subscribe_and_get_data, get_cached_data
 from kis.constants.const_index import INDEX_CODE_NAME_MAP, OVERSEAS_INDEX_CODE_NAME_MAP
+from kis.api.util.market_time import is_after_market_close
 
 
 logger = logging.getLogger(__name__)
@@ -55,8 +57,16 @@ class RealtimeQuoteView(APIView):
             return Response({"detail": "codes is required"}, status=400)
 
         results = []
+        # 장 운영 시간인지 확인 (True=장중, False=장마감)
+        # is_after_market_close() returns True if market is OPEN, False if CLOSED (based on user info)
+        is_market_open = is_after_market_close()
+
         for code in codes:
-            data = subscribe_and_get_data("H0STCNT0", code, "price", timeout=10)
+            if is_market_open:
+                data = subscribe_and_get_data("H0STCNT0", code, "price", timeout=10)
+            else:
+                data = get_cached_data(code, "price")
+
             stock_name = mapping_code_to_name(code)
             if data:
                 result_item = {
@@ -86,9 +96,18 @@ class RealtimeIndexView(APIView):
         results = []
 
         # 1) 국내 지수 2종 (코스피/코스닥) - WebSocket
+        # 장 운영 시간인지 확인 (True=장중, False=장마감)
+        # is_after_market_close() returns True if market is OPEN, False if CLOSED (based on user info)
+
+        is_market_open = is_after_market_close()
+
         for code, name in INDEX_CODE_NAME_MAP.items():
             yesterday = get_or_set_index_yesterday(code)
-            ws_data = subscribe_and_get_data("H0UPCNT0", code, "index", timeout=3)
+            
+            if is_market_open:
+                ws_data = subscribe_and_get_data("H0UPCNT0", code, "index", timeout=3)
+            else:
+                ws_data = get_cached_data(code, "index")
 
             if ws_data and ws_data.get("price"):
                 results.append({

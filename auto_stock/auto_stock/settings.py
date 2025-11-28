@@ -17,14 +17,13 @@ from dotenv import load_dotenv
 import pymysql
 pymysql.install_as_MySQLdb()
 
-## 환경 변수 로드
-env = os.getenv("DJANGO_ENV", "local")  # 기본값: local
-env_file = f".env.{env}"
-
-print(f"▶️ Using env: {env_file}")
-load_dotenv(dotenv_path=".env")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+## 환경 변수 로드
+ENV_PATH = BASE_DIR / ".env"
+
+load_dotenv(ENV_PATH)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -104,24 +103,29 @@ TEMPLATES = [
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# # 로컬 환경 데이터베이스
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'hb05',
+#         'USER': 'django_user',
+#         'PASSWORD': '1234!',
+#         'HOST': '127.0.0.1',
+#         'PORT': '3306'
 #     }
 # }
 
+# 배포 환경 데이터베이스
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'hb05',
         'USER': 'django_user',
-        'PASSWORD': '1234!',
-        'HOST': '127.0.0.1',
+        'PASSWORD': 'Soldesk1.',
+        'HOST': '172.16.6.126',
         'PORT': '3306'
     }
 }
-
 
 # Celery
 CELERY_BROKER_URL = "redis://localhost:6379/0"
