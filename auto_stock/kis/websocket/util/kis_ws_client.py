@@ -14,7 +14,7 @@ django.setup()
 # ------------------ 환경 변수 ------------------
 WS_BASE_URL_REAL = os.getenv("KIS_WS_BASE_URL_REAL")
 CUST_TYPE = os.getenv("KIS_WS_CUSTOMER_TYPE", "P")
-REDIS_TTL = 60
+REDIS_TTL = 60 * 60 * 18
 REDIS_CHANNEL = "subscribe.add"
 
 r = redis.Redis(decode_responses=True)
