@@ -6,12 +6,12 @@ INDEX_CODE_NAME_MAP = {
 
 OVERSEAS_INDEX_CODE_NAME_MAP = {
     "usdkrw": {
-        "name": "환율",
+        "name": "달러 환율",
         "fid_cond_mrkt_div_code": "X",
         "symbol": "FX@KRW",
     },
     "nasdaq100": {
-        "name": "나스닥 100",
+        "name": "나스닥",
         "fid_cond_mrkt_div_code": "N",
         "symbol": "COMP",
     },
