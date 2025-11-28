@@ -4,7 +4,7 @@ import redis
 import numpy as np
 from typing import List, Dict, Union
 
-from kis.api.util.request import request_get
+from kis.api.util.request_real import request_get
 from kis.api.index import fetch_yesterday_close
 
 logger = logging.getLogger(__name__)
