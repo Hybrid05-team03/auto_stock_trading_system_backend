@@ -12,6 +12,8 @@ ACCOUNT_NO = os.getenv("KIS_ACCOUNT_NO")
 
 TR_ID_BUY = os.getenv("KIS_BUY_TR_ID")
 TR_ID_SELL = os.getenv("KIS_SELL_TR_ID")
+TR_ID_CANCEL = os.getenv("KIS_CANCEL_TR_ID", "TTTC0803U")
+
 
 if not all([BASE_URL, ACCOUNT_NO, TR_ID_BUY, TR_ID_SELL]):
     raise RuntimeError("KIS 환경변수(KIS_BASE_URL, KIS_ACCOUNT_NO, KIS_BUY_TR_ID, KIS_SELL_TR_ID)가 필요합니다.")
@@ -94,3 +96,51 @@ def order_buy(symbol: str, qty: int, price: int = 0,
               order_type: OrderType = "limit",
               dry_run: bool = False) -> TradeResult:
     return _send_order(symbol, "SELL", qty, price, order_type, dry_run)
+
+
+## 주문 취소
+def order_cancel(symbol: str, order_id: str, qty: int, total: bool = False, dry_run: bool = False) -> TradeResult:
+    if dry_run:
+        msg = f"[DryRun] CANCEL {symbol} order_id={order_id} qty={'ALL' if total else qty}"
+        print(msg)
+        return TradeResult(True, "CANCEL", symbol, qty, 0, "market", "dry-run", msg)
+
+    headers = _get_headers(tr_id=TR_ID_CANCEL)
+    url = f"{BASE_URL}/uapi/domestic-stock/v1/trading/order-rvsecncl"
+
+    body = {
+        "CANO": CANO,
+        "ACNT_PRDT_CD": ACNT_PRDT_CD,
+        "KRX_FWDG_ORD_ORGNO": "00950",  # 한국투자증권 영업점 코드 (가상계좌인 경우 다를 수 있음, 보통 00950/06010 등)
+        "ORGN_ODNO": order_id,
+        "ORD_DVSN": "00",               # 00: 지정가 (취소는 보통 00)
+        "RVSE_CNCL_DVSN_CD": "02",      # 01: 정정, 02: 취소
+        "ORD_QTY": "0" if total else str(qty), # 0이면 전량 취소
+        "ORD_UNPR": "0",                # 취소는 단가 0
+        "QTY_ALL_ORD_YN": "Y" if total else "N",
+    }
+
+    print("[DEBUG] CANCEL URL:", url)
+    print("[DEBUG] CANCEL BODY:", body)
+
+    try:
+        res = requests.post(url, headers=headers, json=body, timeout=10)
+        res.raise_for_status()
+
+        data = res.json()
+        if data.get("rt_cd") == "0":
+            msg = f"[SUCCESS] CANCEL {symbol} order_id={order_id}"
+            print(msg)
+            return TradeResult(True, "CANCEL", symbol, qty, 0, "market", order_id, msg)
+
+        msg = f"[FAIL] {data.get('msg1', 'Unknown error')}"
+        print(msg)
+        return TradeResult(False, "CANCEL", symbol, qty, 0, "market", message=msg)
+
+    except requests.RequestException as e:
+        print("[DEBUG] CANCEL REQUEST EXCEPTION:", e)
+        if hasattr(e, "response") and e.response is not None:
+            print("[DEBUG] RAW RESPONSE:", e.response.text)
+        
+        return TradeResult(False, "CANCEL", symbol, qty, 0, "market", message=str(e))
+		

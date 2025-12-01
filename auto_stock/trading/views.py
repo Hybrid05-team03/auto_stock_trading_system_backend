@@ -8,7 +8,7 @@ from kis.api.quote import kis_get_market_cap
 from kis.data.search_code import mapping_code_to_name
 from kis.websocket.util.kis_data_save import subscribe_and_get_data
 from trading.tasks.auto_buy import auto_buy
-from kis.websocket.trading_ws import order_sell, order_buy
+from kis.websocket.trading_ws import order_sell, order_buy, order_cancel
 from kis.api.account import fetch_psbl_order, fetch_balance
 
 
@@ -177,6 +177,28 @@ class ManualSellView(APIView):
             return Response({"error": "symbol, qty 필요"}, status=400)
 
         result = order_sell(symbol, qty, order_type=order_type)
+
+        return Response({
+            "ok": result.ok,
+            "message": result.message,
+            "order_id": result.order_id,
+        })
+
+## 주문 취소
+class OrderCancelView(APIView):
+    def post(self, request):
+        symbol = request.data.get("symbol")
+        order_id = request.data.get("order_id")
+        qty = int(request.data.get("qty", 0))
+        total = request.data.get("total", False)
+
+        if not symbol or not order_id:
+            return Response({"error": "symbol, order_id 필수"}, status=400)
+
+        if not total and qty <= 0:
+            return Response({"error": "qty > 0 또는 total=True 필요"}, status=400)
+
+        result = order_cancel(symbol, order_id, qty, total=total)
 
         return Response({
             "ok": result.ok,
