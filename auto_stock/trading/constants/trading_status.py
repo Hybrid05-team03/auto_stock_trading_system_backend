@@ -1,6 +1,14 @@
-ORDER_REQUEST_STATUS = [
+ORDER_STATUS = [
     'PENDING',
-    'PROCESSING',
-    'SUCCESS',
-    'FAIL',
+    'REQUESTING',
+    'REQUEST_FAILED',
+    'BUYING',
+    'SELLING',
+    'DONE',
+]
+
+
+ORDER_EXECUTION_SIDE = [
+    'BUY',
+    'SELL'
 ]

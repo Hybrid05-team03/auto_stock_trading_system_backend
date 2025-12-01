@@ -17,4 +17,7 @@ urlpatterns = [
     path("psl-buy/", views.IsPossibleBuyView.as_view(), name="is-possible-buy"),
     # 매도 가능 여부 조회
     path("psl-sell/", views.IsPossibleSellView.as_view(), name="is-possible-sell"),
+
+    # 최근 체결가 조회
+    path("recent/", views.RecentCCLD.as_view())
 ]

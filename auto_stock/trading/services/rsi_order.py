@@ -1,4 +1,3 @@
-# trading/services/order_service.py
 from kis.api.price import kis_get_realtime_price
 from kis.websocket.trading_ws import order_sell, order_buy
 
