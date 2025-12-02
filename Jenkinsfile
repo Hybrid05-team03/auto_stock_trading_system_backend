@@ -45,12 +45,12 @@ pipeline {
                                 # 파일 존재 체크 없이 바로 뒤에 내용을 붙입니다.
 
                                 echo "" | sudo tee -a ${ENV_FILE}
-                                echo "KIS_APP_KEY_REAL=${KIS_APP_KEY_REAL}"      | sudo tee -a ${ENV_FILE}
-                                echo "KIS_APP_SECRET_REAL=${KIS_APP_SECRET_REAL}"| sudo tee -a ${ENV_FILE}
-                                echo "KIS_APP_KEY=${KIS_APP_KEY}"                 | sudo tee -a ${ENV_FILE}
-                                echo "KIS_APP_SECRET=${KIS_APP_SECRET}"           | sudo tee -a ${ENV_FILE}
-                                echo "KIS_ACCOUNT_NO=${KIS_ACCOUNT_NO}"           | sudo tee -a ${ENV_FILE}
-                                echo "KIS_ACCOUNT_NO_REAL=${KIS_ACCOUNT_NO_REAL}" | sudo tee -a ${ENV_FILE}
+                                echo "APP_KEY_REAL=${KIS_APP_KEY_REAL}"      | sudo tee -a ${ENV_FILE}
+                                echo "APP_SECRET_REAL=${KIS_APP_SECRET_REAL}"| sudo tee -a ${ENV_FILE}
+                                echo "APP_KEY=${KIS_APP_KEY}"                 | sudo tee -a ${ENV_FILE}
+                                echo "APP_SECRET=${KIS_APP_SECRET}"           | sudo tee -a ${ENV_FILE}
+                                echo "ACCOUNT_NO=${KIS_ACCOUNT_NO}"           | sudo tee -a ${ENV_FILE}
+                                echo "ACCOUNT_NO_REAL=${KIS_ACCOUNT_NO_REAL}" | sudo tee -a ${ENV_FILE}
 
                                 # 권한 설정
                                 sudo chmod 600 ${ENV_FILE}
