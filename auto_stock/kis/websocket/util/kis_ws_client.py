@@ -12,8 +12,8 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "auto_stock.settings")
 django.setup()
 
 # ------------------ 환경 변수 ------------------
-WS_BASE_URL_REAL = os.getenv("KIS_WS_BASE_URL_REAL")
-CUST_TYPE = os.getenv("KIS_WS_CUSTOMER_TYPE", "P")
+WS_BASE_URL_REAL = os.getenv("WS_BASE_URL_REAL")
+CUST_TYPE = os.getenv("CUST_TYPE")
 REDIS_TTL = 60 * 60 * 18
 REDIS_CHANNEL = "subscribe.add"
 

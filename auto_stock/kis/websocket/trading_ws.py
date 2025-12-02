@@ -7,20 +7,20 @@ from trading.data.trading_result import TradeResult
 Type = Literal["BUY", "SELL"]
 OrderType = Literal["limit", "market"]
 
-BASE_URL = os.getenv("KIS_BASE_URL")
-ACCOUNT_NO = os.getenv("KIS_ACCOUNT_NO")
+BASE_URL = os.getenv("BASE_URL")
+ACCOUNT_NO = os.getenv("ACCOUNT_NO")
 
 
-TR_ID_BUY = os.getenv("KIS_BUY_TR_ID")
-TR_ID_SELL = os.getenv("KIS_SELL_TR_ID")
-TR_ID_CANCEL = os.getenv("KIS_CANCEL_TR_ID")
+BUY_TR_ID = os.getenv("BUY_TR_ID")
+SELL_TR_ID = os.getenv("SELL_TR_ID")
+CANCEL_TR_ID = os.getenv("CANCEL_TR_ID")
 
 
 CANO, ACNT_PRDT_CD = ACCOUNT_NO.split("-")
 
 
-if not all([BASE_URL, ACCOUNT_NO, TR_ID_BUY, TR_ID_SELL]):
-    raise RuntimeError("KIS 환경변수(KIS_BASE_URL, KIS_ACCOUNT_NO, KIS_BUY_TR_ID, KIS_SELL_TR_ID)가 필요합니다.")
+if not all([BASE_URL, ACCOUNT_NO, BUY_TR_ID, SELL_TR_ID, CANCEL_TR_ID]):
+    raise RuntimeError("KIS 환경변수(BASE_URL, ACCOUNT_NO, BUY_TR_ID, SELL_TR_ID, CANCEL_TR_ID)가 필요합니다.")
 
 ## KIS 주문 요청 로직
 def _send_order(symbol: str, type: Type, qty: int, price: int,
@@ -35,7 +35,7 @@ def _send_order(symbol: str, type: Type, qty: int, price: int,
         return TradeResult(True, type, symbol, qty, price, order_type, "dry-run", msg)
 
     # TR-ID 선택
-    tr_id = TR_ID_BUY if type == "BUY" else TR_ID_SELL
+    tr_id = BUY_TR_ID if type == "BUY" else SELL_TR_ID
     headers = _get_headers(tr_id=tr_id)
 
     url = f"{BASE_URL}/uapi/domestic-stock/v1/trading/order-cash"

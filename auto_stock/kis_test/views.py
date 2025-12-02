@@ -17,7 +17,7 @@ from kis.api.util.market_time import is_after_market_close
 
 logger = logging.getLogger(__name__)
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+REDIS_URL = os.getenv("REDIS_URL")
 r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 # ------------------------------------------------------------
@@ -53,6 +53,7 @@ class RealtimeQuoteView(APIView):
     def get(self, request):
         raw_codes = request.query_params.get("codes", "")
         codes = [c.strip() for c in raw_codes.split(",") if c.strip()]
+        tr_id = os.getenv("PRICE_REALTIME_TR_ID")
         if not codes:
             return Response({"detail": "codes is required"}, status=400)
 
@@ -63,7 +64,7 @@ class RealtimeQuoteView(APIView):
 
         for code in codes:
             if is_market_open:
-                data = subscribe_and_get_data("H0STCNT0", code, "price", timeout=10)
+                data = subscribe_and_get_data(tr_id, code, "price", timeout=10)
             else:
                 data = get_cached_data(code, "price")
 
@@ -93,6 +94,7 @@ class RealtimeQuoteView(APIView):
 # ------------------------------------------------------------
 class RealtimeIndexView(APIView):
     def get(self, request):
+        tr_id = os.getenv("INDEX_REALTIME_TR_ID")
         results = []
 
         # 1) 국내 지수 2종 (코스피/코스닥) - WebSocket
@@ -105,7 +107,7 @@ class RealtimeIndexView(APIView):
             yesterday = get_or_set_index_yesterday(code)
             
             if is_market_open:
-                ws_data = subscribe_and_get_data("H0UPCNT0", code, "index", timeout=3)
+                ws_data = subscribe_and_get_data(tr_id, code, "index", timeout=3)
             else:
                 ws_data = get_cached_data(code, "index")
 

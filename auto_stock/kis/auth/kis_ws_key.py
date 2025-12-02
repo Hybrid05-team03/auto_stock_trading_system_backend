@@ -5,9 +5,9 @@ import redis
 from dotenv import load_dotenv
 load_dotenv(dotenv_path=".env")
 
-BASE_URL = os.getenv("KIS_BASE_URL", "https://openapivts.koreainvestment.com:29443")
-APP_KEY = os.getenv("KIS_APP_KEY")
-APP_SECRET = os.getenv("KIS_APP_SECRET")
+BASE_URL = os.getenv("BASE_URL_REAL")
+APP_KEY = os.getenv("APP_KEY_REAL")
+APP_SECRET = os.getenv("APP_SECRET_REAL")
 
 CACHED_TTL = 86400  # 24시간
 _WS_KEY_CACHE = {"approval_key": None, "approval_expires_at": 0}
