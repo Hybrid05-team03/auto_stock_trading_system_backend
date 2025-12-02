@@ -2,9 +2,14 @@ ORDER_STATUS = [
     'PENDING',
     'REQUESTING',
     'REQUEST_FAILED',
+
     'BUYING',
-    'SELLING',
-    'DONE',
+    'BUY_PENDING',
+    'BUY_DONE',
+
+    'SELL_PENDING',
+    'SELL_REQUEST_FAILED',
+    'SELL_DONE',
 ]
 
 

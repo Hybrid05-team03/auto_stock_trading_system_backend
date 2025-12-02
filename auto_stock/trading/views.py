@@ -143,11 +143,11 @@ class ManualBuyView(APIView):
         })
 
 
-## 수동 매수(buy)
+## 수동 매도(buy)
 class ManualSellView(APIView):
     def post(self, request):
         symbol = request.data.get("symbol")
-        qty = int(request.data.get("qty", 0))
+        qty = int(request.data.get("qty"))
         order_type = request.data.get("order_type", "market")
 
         if not symbol or qty <= 0:
@@ -165,7 +165,17 @@ class ManualSellView(APIView):
 ## 사용자 최근 체결가 조회 (주문번호로 단건 조회)
 class RecentCCLD(APIView):
     def get(self, request):
-        result = fetch_recent_ccld("0000006102", "034020")
+        kis_order_id = request.query_params.get("kis_order_id")
+        symbol = request.query_params.get("symbol")
+
+        if not kis_order_id or not symbol:
+            return Response({
+                "ok": False,
+                "message": "요청 시 kis_order_id, symbol 모두 필요"
+            }, status=400)
+
+        result = fetch_recent_ccld(kis_order_id, symbol)
+
         return Response({
             "ok": True,
             "message": "체결내역 조회 완료",
