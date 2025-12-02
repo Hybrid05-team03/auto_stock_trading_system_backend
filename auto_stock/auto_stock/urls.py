@@ -7,7 +7,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # (개발용) 한투 API 테스트
-    path('api/kis-test/', include('kis_test.urls')),
+    path('api/data/', include('data.urls')),
 
     # (개발용) 서비스 API 문서 - Swagger
     path(r'swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
