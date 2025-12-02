@@ -1,8 +1,8 @@
 import os, requests, redis, logging
 
-BASE_URL = os.getenv("KIS_BASE_URL")
-APP_KEY = os.getenv("KIS_APP_KEY")
-APP_SECRET = os.getenv("KIS_APP_SECRET")
+BASE_URL = os.getenv("BASE_URL")
+APP_KEY = os.getenv("APP_KEY")
+APP_SECRET = os.getenv("APP_SECRET")
 
 TOKEN_KEY = "kis_access_token"
 TTL = 23 * 3600   # 23시간 TTL

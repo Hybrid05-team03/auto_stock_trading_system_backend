@@ -22,7 +22,7 @@ django.setup()
 ###### 현재 사용되지 않고 있음 ##############
 def kis_get_index_last2(code: str) -> dict:
     path = os.getenv("KIS_BASE_URL")
-    tr_id = os.getenv("KIS_INDEX_DAILY_TR_ID", "FHKUP03500100")
+    tr_id = os.getenv("DOMESTIC_INDEX_DAILY_TR_ID")
 
     today_d = date.today()
     start_d = today_d - timedelta(days=10)
@@ -80,7 +80,7 @@ def fetch_overseas_index_period_series(
         period_div_code: str = "D",
 ) -> List[Dict[str, Any]]:
     path = "/uapi/overseas-price/v1/quotations/inquire-daily-chartprice"
-    tr_id = "FHKST03030100"
+    tr_id = os.getenv("OVERSEAS_INDEX_DAILY_TR_ID")
 
     params = {
         "FID_COND_MRKT_DIV_CODE": fid_cond_mrkt_div_code,
@@ -207,7 +207,7 @@ def fetch_overseas_index_intraday_series(
     """
 
     path = "/uapi/overseas-price/v1/quotations/inquire-time-indexchartprice"
-    tr_id = "FHKST03030200"
+    tr_id = os.getenv("OVERSEAS_INDEX_MIN_TR_ID")
 
     params = {
         "FID_COND_MRKT_DIV_CODE": fid_cond_mrkt_div_code,   # N, X, KX, ...

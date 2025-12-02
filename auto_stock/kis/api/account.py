@@ -2,21 +2,20 @@ import os, logging, json, requests
 from datetime import datetime
 from kis.api.util.request import request_get
 
-BASE_URL = os.getenv("KIS_BASE_URL")
-ACCOUNT_NO = os.getenv("KIS_ACCOUNT_NO")
+BASE_URL = os.getenv("BASE_URL")
+ACCOUNT_NO = os.getenv("ACCOUNT_NO")
 CANO, ACNT_PRDT_CD = ACCOUNT_NO.split("-")
-TR_ID = "VTTC8908R"
 
 logger = logging.getLogger(__name__)
 
 ## 특정 종목 매수 가능 조회 (모의)
 def fetch_psbl_order(symbol: str):
     path = "/uapi/domestic-stock/v1/trading/inquire-psbl-order"
-    tr_id = "VTTC8908R"
+    tr_id = os.getenv("BUY_PSBL_TR_ID")
 
     params = {
-        "CANO": "50156403",
-        "ACNT_PRDT_CD": "01",
+        "CANO": CANO,
+        "ACNT_PRDT_CD": ACNT_PRDT_CD,
         "PDNO": symbol,
         "ORD_DVSN": "01",     # 시장가
         "ORD_UNPR": "",       # 시장가이므로 공란
@@ -46,7 +45,7 @@ def fetch_psbl_order(symbol: str):
 ## 계좌 보유 잔고 조회 (모의)
 def fetch_balance():
     path = "/uapi/domestic-stock/v1/trading/inquire-balance"
-    tr_id = "VTTC8434R"
+    tr_id = os.getenv("ACCOUNT_TR_ID")
 
     params = {
         "CANO": CANO,
@@ -92,7 +91,7 @@ def fetch_balance():
 ## 최근 거래 내역 중 체결 정보 조회
 def fetch_recent_ccld(kis_order_id: str, symbol: str):
     path = "/uapi/domestic-stock/v1/trading/inquire-daily-ccld"
-    tr_id = "VTTC0081R"
+    tr_id = os.getenv("RECENT_TR_ID")
 
     today = datetime.today().strftime("%Y%m%d")
 
@@ -139,7 +138,7 @@ def fetch_recent_ccld(kis_order_id: str, symbol: str):
 ## 최근 거래 내역 중 미체결 정보 조회
 def fetch_unfilled_status(order_id: str, symbol: str):
     path = "/uapi/domestic-stock/v1/trading/inquire-daily-ccld"
-    tr_id = "VTTC0081R"
+    tr_id = os.getenv("RECENT_TR_ID")
 
     today = datetime.today().strftime("%Y%m%d")
 

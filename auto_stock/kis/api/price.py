@@ -18,7 +18,7 @@ DailyPriceRow = Dict[str, Union[str, float, int]]
 # --------------------------------------------------------------------
 def fetch_price_series(symbol: str, period: str = "D") -> List[DailyPriceRow]:
     path = "/uapi/domestic-stock/v1/quotations/inquire-daily-price"
-    tr_id = "FHKST01010400"
+    tr_id = os.getenv("PRICE_DAILY_TR_ID")
     params = {
         "FID_COND_MRKT_DIV_CODE": "J",   # 주식시장 구분코드 (J: 주식)
         "FID_INPUT_ISCD": symbol,         # 종목코드 (예: 005930)
@@ -59,7 +59,7 @@ def kis_get_realtime_price(symbol: str) -> float:
     Get the latest realtime price for a symbol using REST (real account version).
     """
     path = "/uapi/domestic-stock/v1/quotations/inquire-price"
-    tr_id = "FHKST01010100"
+    tr_id = os.getenv("PRICE_TR_ID")
     params = {
         "FID_COND_MRKT_DIV_CODE": "J",   # 시장코드
         "FID_INPUT_ISCD": symbol,         # 종목코드
@@ -78,7 +78,7 @@ def kis_get_realtime_price(symbol: str) -> float:
 ## 전일 종가 조회
 def fetch_yesterday_close(code: str) -> float | None:
     path = "/uapi/domestic-stock/v1/quotations/inquire-daily-indexchartprice"
-    tr_id = os.getenv("KIS_INDEX_DAILY_TR_ID", "FHKUP03500100")
+    tr_id = os.getenv("DOMESTIC_INDEX_DAILY_TR_ID")
 
     today_d = date.today()
     start_d = today_d - timedelta(days=10)
