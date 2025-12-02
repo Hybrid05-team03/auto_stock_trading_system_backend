@@ -1,15 +1,17 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from .models import OrderRequest
+from .models import OrderRequest, OrderExecution
 from .serializers import OrderRequestSerializer
 
 from kis.api.quote import kis_get_market_cap
 from kis.data.search_code import mapping_code_to_name
 from kis.websocket.util.kis_data_save import subscribe_and_get_data
 from trading.tasks.auto_buy import auto_buy
+
 from kis.websocket.trading_ws import order_sell, order_buy, order_cancel
-from kis.api.account import fetch_psbl_order, fetch_balance
+from kis.api.account import fetch_psbl_order, fetch_balance, fetch_recent_ccld
+
 
 
 ## 매도 가능 여부 조회 계좌 잔고 조회
@@ -81,50 +83,27 @@ class IsPossibleBuyView(APIView):
 class AutoOrderCreateView(APIView):
     ## 주문 기록 목록 조회
     def get(self, request):
-        orders = OrderRequest.objects.all().order_by("-created_at")
-
-        # 종목코드 리스트
-        symbols = [o.symbol for o in orders]
-        symbols = list(set(symbols))  # 중복 제거
-
-        ui_map = {}  # 실시간 정보 저장
-
-        # 각 종목의 실시간 데이터
-        for code in symbols:
-            data = subscribe_and_get_data("H0STCNT0", code, "price", timeout=7)
-            stock_name = mapping_code_to_name(code)
-
-            if data:
-                ui_map[code] = {
-                    "name": stock_name,
-                    "symbol": code,
-                    "current_price": data.get("current_price"),
-                    "target_price": kis_get_market_cap(code),
-                    "change_percent": data.get("change_rate"),
-                    "volume": data.get("trade_value"),
-                }
-            else:
-                ui_map[code] = {
-                    "name": stock_name,
-                    "symbol": code,
-                    "current_price": None,
-                    "target_price": None,
-                    "change_percent": None,
-                    "volume": None,
-                }
+        orders = OrderRequest.objects.all().order_by("-updated_at")
 
         response_list = []
         for order in orders:
-            info = ui_map.get(order.symbol, {})
+            executions = OrderExecution.objects.filter(order_request=order)
+            exec_list = [
+                {
+                    "side": exec.side,
+                    "price": exec.executed_price
+                }
+                for exec in executions
+            ]
 
+            name = mapping_code_to_name(order.symbol)
             response_list.append({
-                "name": info.get("name"),
                 "symbol": order.symbol,
-                "currentPrice": info.get("current_price"),
-                "targetPrice": info.get("target_price"),
-                "strategy": order.strategy.upper(),
-                "changePercent": info.get("change_percent"),
-                "status": order.status
+                "name": name,
+                "executions": exec_list,
+                "strategy": order.strategy,
+                "gap": order.target_profit,
+                "status": order.status,
             })
 
         return Response(response_list, status=200)
@@ -166,11 +145,11 @@ class ManualBuyView(APIView):
         })
 
 
-## 수동 매수(buy)
+## 수동 매도(buy)
 class ManualSellView(APIView):
     def post(self, request):
         symbol = request.data.get("symbol")
-        qty = int(request.data.get("qty", 0))
+        qty = int(request.data.get("qty"))
         order_type = request.data.get("order_type", "market")
 
         if not symbol or qty <= 0:
@@ -183,6 +162,7 @@ class ManualSellView(APIView):
             "message": result.message,
             "order_id": result.order_id,
         })
+
 
 ## 주문 취소
 class OrderCancelView(APIView):
@@ -205,3 +185,24 @@ class OrderCancelView(APIView):
             "message": result.message,
             "order_id": result.order_id,
         })
+
+## 사용자 최근 체결가 조회 (주문번호로 단건 조회)
+class RecentCCLD(APIView):
+    def get(self, request):
+        kis_order_id = request.query_params.get("kis_order_id")
+        symbol = request.query_params.get("symbol")
+
+        if not kis_order_id or not symbol:
+            return Response({
+                "ok": False,
+                "message": "요청 시 kis_order_id, symbol 모두 필요"
+            }, status=400)
+
+        result = fetch_recent_ccld(kis_order_id, symbol)
+
+        return Response({
+            "ok": True,
+            "message": "체결내역 조회 완료",
+            "content": result
+        })
+

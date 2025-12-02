@@ -10,17 +10,17 @@ OrderType = Literal["limit", "market"]
 BASE_URL = os.getenv("KIS_BASE_URL")
 ACCOUNT_NO = os.getenv("KIS_ACCOUNT_NO")
 
+
 TR_ID_BUY = os.getenv("KIS_BUY_TR_ID")
 TR_ID_SELL = os.getenv("KIS_SELL_TR_ID")
-TR_ID_CANCEL = os.getenv("KIS_CANCEL_TR_ID", "TTTC0803U")
+TR_ID_CANCEL = os.getenv("KIS_CANCEL_TR_ID")
+
+
+CANO, ACNT_PRDT_CD = ACCOUNT_NO.split("-")
 
 
 if not all([BASE_URL, ACCOUNT_NO, TR_ID_BUY, TR_ID_SELL]):
     raise RuntimeError("KIS 환경변수(KIS_BASE_URL, KIS_ACCOUNT_NO, KIS_BUY_TR_ID, KIS_SELL_TR_ID)가 필요합니다.")
-
-ACCOUNT_NO = os.getenv("KIS_ACCOUNT_NO")
-CANO, ACNT_PRDT_CD = ACCOUNT_NO.split("-")
-
 
 ## KIS 주문 요청 로직
 def _send_order(symbol: str, type: Type, qty: int, price: int,
@@ -88,14 +88,15 @@ def _send_order(symbol: str, type: Type, qty: int, price: int,
 def order_sell(symbol: str, qty: int, price: int = 0,
                order_type: OrderType = "limit",
                dry_run: bool = False) -> TradeResult:
-    return _send_order(symbol, "BUY", qty, price, order_type, dry_run)
+    return _send_order(symbol, "SELL", qty, price, order_type, dry_run)
 
 
 ## 매수
-def order_buy(symbol: str, qty: int, price: int = 0,
+def order_buy(symbol: str, qty: int, price: int=0,
               order_type: OrderType = "limit",
               dry_run: bool = False) -> TradeResult:
-    return _send_order(symbol, "SELL", qty, price, order_type, dry_run)
+
+    return _send_order(symbol, "BUY", qty, price, order_type, dry_run)
 
 
 ## 주문 취소
@@ -143,4 +144,4 @@ def order_cancel(symbol: str, order_id: str, qty: int, total: bool = False, dry_
             print("[DEBUG] RAW RESPONSE:", e.response.text)
         
         return TradeResult(False, "CANCEL", symbol, qty, 0, "market", message=str(e))
-		
+

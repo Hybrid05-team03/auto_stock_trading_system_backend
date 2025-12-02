@@ -5,4 +5,4 @@ from .models import OrderRequest
 class OrderRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderRequest
-        fields = ["symbol", "quantity", "strategy", "risk"]
+        fields = ["symbol", "quantity", "target_profit", "strategy", "risk"]

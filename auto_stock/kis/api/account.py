@@ -1,5 +1,5 @@
-import os, logging, json
-
+import os, logging, json, requests
+from datetime import datetime
 from kis.api.util.request import request_get
 
 BASE_URL = os.getenv("KIS_BASE_URL")
@@ -87,3 +87,96 @@ def fetch_balance():
         "cash": cash,
         "stocks": stocks
     }
+
+
+## 최근 거래 내역 중 체결 정보 조회
+def fetch_recent_ccld(kis_order_id: str, symbol: str):
+    path = "/uapi/domestic-stock/v1/trading/inquire-daily-ccld"
+    tr_id = "VTTC0081R"
+
+    today = datetime.today().strftime("%Y%m%d")
+
+    params = {
+        "CANO": CANO,
+        "ACNT_PRDT_CD": ACNT_PRDT_CD,
+        "INQR_STRT_DT": today,
+        "INQR_END_DT": today,
+        "SLL_BUY_DVSN_CD": "00",
+        "PDNO": symbol,  # 상품 번호
+        "ORD_GNO_BRNO": "",
+        "ODNO": kis_order_id, # 주문 번호
+        "CCLD_DVSN": "01",   # 체결된 건만 조회
+        "INQR_DVSN": "00",
+        "INQR_DVSN_1": "0",
+        "INQR_DVSN_3": "00",
+        "EXCG_ID_DVSN_CD": "KRX",
+        "CTX_AREA_FK100": "",
+        "CTX_AREA_NK100": ""
+    }
+
+    data = request_get(path, tr_id, params)
+
+    if data.get("rt_cd") != "0":
+        logger.info(f"[ERROR] 오류 발생: {data.get('msg1')}")
+        return None
+
+    output1 = data.get("output1", [])
+    if not output1:
+        logger.info("체결 내역 없음")
+        return None
+
+    # 가장 최신 체결 데이터 (역순 기준)
+    latest = output1[0]
+
+    return {
+        "date": str(latest.get("ord_dt")),
+        "time": str(latest.get("ord_tmd")),
+        "price": int(latest.get("avg_prvs", 0)),
+        "qty": int(latest.get("tot_ccld_qty", 0))
+    }
+
+
+## 최근 거래 내역 중 미체결 정보 조회
+def fetch_unfilled_status(order_id: str, symbol: str):
+    path = "/uapi/domestic-stock/v1/trading/inquire-daily-ccld"
+    tr_id = "VTTC0081R"
+
+    today = datetime.today().strftime("%Y%m%d")
+
+    params = {
+        "CANO": CANO,
+        "ACNT_PRDT_CD": ACNT_PRDT_CD,
+        "INQR_STRT_DT": today,
+        "INQR_END_DT": today,
+        "SLL_BUY_DVSN_CD": "00",
+        "PDNO": symbol,
+        "ORD_GNO_BRNO": "",
+        "CCLD_DVSN": "02",  # 미체결 조회
+        "INQR_DVSN": "00",
+        "INQR_DVSN_1": "0",
+        "INQR_DVSN_3": "00",
+        "EXCG_ID_DVSN_CD": "KRX",
+        "CTX_AREA_FK100": "",
+        "CTX_AREA_NK100": "",
+    }
+
+    data = request_get(path, tr_id, params)
+
+    if data.get("rt_cd") != "0":
+        logger.info(f"[ERROR] ccld error: {data.get('msg1')}")
+        return None
+
+    rows = data.get("output1", [])
+
+    # 주문번호로 매칭
+    for row in rows:
+        if row.get("odno") == order_id:
+            return {
+                "order_id": row.get("odno"),
+                "symbol": row.get("pdno"),
+                "order_qty": int(row.get("ord_qty", 0)),
+                "price": int(row.get("ord_unpr", 0)),
+                "status": "UNFILLED",
+            }
+
+    return None
