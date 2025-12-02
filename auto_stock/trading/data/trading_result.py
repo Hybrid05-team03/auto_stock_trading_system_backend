@@ -13,3 +13,4 @@ class TradeResult:
     order_type: Literal["limit", "market"]
     order_id: Optional[str] = None
     message: str = ""
+
