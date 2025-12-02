@@ -57,7 +57,7 @@ INSTALLED_APPS = [
     'indices',
     'trading',
     'kis',
-    'kis_test',
+    'data',
 
     ## settings
     'corsheaders',
@@ -115,7 +115,6 @@ TEMPLATES = [
 #     }
 # }
 
-# 배포 환경 데이터베이스
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
