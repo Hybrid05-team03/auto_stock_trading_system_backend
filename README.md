@@ -1,5 +1,8 @@
 # Auto Stock Trading Server repository
 
+
+## 환경 변수 수정 전 ##
+
 ### 🔎 About CashCow 
 CashCow는 주식 자동 매매 자동화를 위한 django 애플리케이션입니다. <br>
 한국투자증권 API와 실시간 시세 데이터, RSI 지표를 통해 자동 매매 서비스를 제공합니다.<br>
