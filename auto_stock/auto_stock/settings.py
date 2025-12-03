@@ -103,7 +103,7 @@ TEMPLATES = [
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# # 로컬 환경 데이터베이스
+## 로컬 환경 데이터베이스
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.mysql',
@@ -111,7 +111,11 @@ TEMPLATES = [
 #         'USER': 'django_user',
 #         'PASSWORD': '1234!',
 #         'HOST': '127.0.0.1',
-#         'PORT': '3306'
+#         'PORT': '3306',
+#         'OPTIONS': {
+#             'charset': 'utf16mb4',
+#             'use_unicode': True,
+#         },
 #     }
 # }
 
@@ -122,7 +126,11 @@ DATABASES = {
         'USER': 'django_user',
         'PASSWORD': 'Soldesk1.',
         'HOST': '172.16.6.126',
-        'PORT': '3306'
+        'PORT': '3306',
+        'OPTIONS': {
+            'charset': 'utf16mb4',
+            'use_unicode': True,
+        },
     }
 }
 
@@ -157,7 +165,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Seoul'
 
 USE_I18N = True
 

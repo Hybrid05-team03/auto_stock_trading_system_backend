@@ -39,7 +39,6 @@ def auto_buy(order_id):
         time.sleep(1.2)
         exec_data = save_execution_data(order, buy_result, "BUY")
 
-        # logger.info(f"[DEBUG] 데이터 확인 {buy_result.price} {exec_data.executed_price}")
         # 매도 목표가 계산
         if order.target_profit == 0:
             target_price = exec_data.executed_price
