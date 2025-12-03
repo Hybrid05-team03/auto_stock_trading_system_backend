@@ -1,13 +1,14 @@
 import os, redis, logging
 import time
+import pandas as pd
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from kis.auth.kis_token import get_token
 from kis.api.price import fetch_price_series, get_or_set_index_yesterday
-from kis.api.index import fetch_overseas_index_snapshot
-from kis.api.quote import kis_get_market_cap
+from kis.api.index import fetch_overseas_index_snapshot, fetch_domestic_index_snapshot
+from kis.api.quote import kis_get_market_cap, kis_get_price_rest
 from kis.api.rank import fetch_top10_symbols
 from kis.data.search_code import mapping_code_to_name
 from kis.websocket.util.kis_data_save import subscribe_and_get_data, get_cached_data
@@ -80,11 +81,23 @@ class RealtimeQuoteView(APIView):
                 }
                 results.append(result_item)
             else:
-                results.append({
-                    "name": stock_name,
-                    "code": code,
-                    "status": "timeout and no cached data"
-                })
+                # Backup: 캐싱된 데이터가 없을 시, REST API로 조회
+                rest_price = kis_get_price_rest(code)
+                if rest_price and not pd.isna(rest_price):
+                    results.append({
+                        "name": stock_name,
+                        "code": code,
+                        "price": kis_get_market_cap(code),
+                        "currentPrice": rest_price,
+                        "changePercent": "0",
+                        "volume": "0",
+                    })
+                else:
+                    results.append({
+                        "name": stock_name,
+                        "code": code,
+                        "status": "timeout and no cached data"
+                    })
 
         return Response({"stock": results}, status=200)
 
@@ -117,6 +130,15 @@ class RealtimeIndexView(APIView):
                     "yesterday": yesterday,
                     "today": ws_data["price"],
                 })
+            else:
+                # Backup: 캐싱된 데이터가 없을 시, REST API로 조회
+                snap = fetch_domestic_index_snapshot(code)
+                if snap:
+                    results.append({
+                        "name": snap["name"],
+                        "yesterday": snap.get("yesterday"),
+                        "today": snap["today"],
+                    })
 
         # 2) 해외 지수 2종 (달러환율 / 나스닥100) - REST
         for index_key in OVERSEAS_INDEX_CODE_NAME_MAP.keys():
