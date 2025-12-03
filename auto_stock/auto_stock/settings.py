@@ -128,7 +128,7 @@ DATABASES = {
         'HOST': '172.16.6.126',
         'PORT': '3306',
         'OPTIONS': {
-            'charset': 'utf16mb4',
+            'charset': 'utf8mb4',
             'use_unicode': True,
         },
     }
