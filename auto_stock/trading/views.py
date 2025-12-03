@@ -90,7 +90,7 @@ class AutoOrderCreateView(APIView):
             executions = OrderExecution.objects.filter(order_request=order)
             exec_list = [
                 {
-                    "side": exec.side,
+                    "side": exec.executed_side,
                     "price": exec.executed_price
                 }
                 for exec in executions

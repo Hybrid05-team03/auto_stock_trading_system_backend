@@ -1,4 +1,4 @@
-import logging, redis, time
+import logging, time
 from datetime import datetime
 from auto_stock.celery import app
 from trading.data.trading_result import TradeResult
@@ -8,8 +8,6 @@ from kis.websocket.trading_ws import order_buy, order_sell
 from kis.api.account import fetch_recent_ccld, fetch_unfilled_status
 
 logger = logging.getLogger(__name__)
-
-r = redis.Redis(decode_responses=True)
 
 
 ## celery -A auto_stock worker -l info
@@ -41,7 +39,7 @@ def auto_buy(order_id):
         time.sleep(1.2)
         exec_data = save_execution_data(order, buy_result, "BUY")
 
-        logger.info(f"[DEBUG] 데이터 확인 {buy_result.price} {exec_data.executed_price}")
+        # logger.info(f"[DEBUG] 데이터 확인 {buy_result.price} {exec_data.executed_price}")
         # 매도 목표가 계산
         if order.target_profit == 0:
             target_price = exec_data.executed_price
@@ -58,9 +56,8 @@ def auto_buy(order_id):
         ## 매도 요청 완료
         if sell_result.ok:
             order.sell_order_id = sell_result.order_id  # 매도 주문번호
-            order.status = "SELL_PENDING"
+            order.status = "SELL_DONE"
             logger.info("[AUTO-SELL] 매도 요청 완료")
-
             save_execution_data(order, sell_result, "SELL")
         else:
             order.status = "SELL_REQUEST_FAILED"
