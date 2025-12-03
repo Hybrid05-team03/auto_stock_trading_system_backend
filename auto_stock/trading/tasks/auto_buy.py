@@ -4,7 +4,7 @@ from auto_stock.celery import app
 from trading.data.trading_result import TradeResult
 from trading.models import OrderRequest, OrderExecution
 from trading.services.rsi_process import get_rsi_signal
-from kis.websocket.trading_ws import order_buy, order_sell
+from kis.websocket.trading_ws import order_buy, order_sell, order_cancel
 from kis.api.account import fetch_recent_ccld, fetch_unfilled_status
 
 logger = logging.getLogger(__name__)
@@ -119,7 +119,7 @@ def retry_unfilled_sells():
             continue
 
         # 재주문
-        if not cancel_kis_order(order.sell_order_id):
+        if not cancel_kis_order(order.symbol, order.sell_order_id):
             continue
 
         new_result = order_sell(
@@ -166,6 +166,6 @@ def save_execution_data(order: OrderRequest, executed_result: TradeResult, side:
 
 
 ## 주문 취소 함수
-def cancel_kis_order(order_id: str):
-    # TODO 주문 취소 로직 추가
+def cancel_kis_order(symbol: str, order_id: str):
+    order_cancel(symbol, order_id, 0, True)
     return ""

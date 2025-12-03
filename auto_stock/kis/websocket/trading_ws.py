@@ -106,7 +106,7 @@ def order_cancel(symbol: str, order_id: str, qty: int, total: bool = False, dry_
         print(msg)
         return TradeResult(True, "CANCEL", symbol, qty, 0, "market", "dry-run", msg)
 
-    headers = _get_headers(tr_id=TR_ID_CANCEL)
+    headers = _get_headers(tr_id=CANCEL_TR_ID)
     url = f"{BASE_URL}/uapi/domestic-stock/v1/trading/order-rvsecncl"
 
     body = {
@@ -121,9 +121,6 @@ def order_cancel(symbol: str, order_id: str, qty: int, total: bool = False, dry_
         "QTY_ALL_ORD_YN": "Y" if total else "N",
     }
 
-    print("[DEBUG] CANCEL URL:", url)
-    print("[DEBUG] CANCEL BODY:", body)
-
     try:
         res = requests.post(url, headers=headers, json=body, timeout=10)
         res.raise_for_status()
@@ -131,17 +128,11 @@ def order_cancel(symbol: str, order_id: str, qty: int, total: bool = False, dry_
         data = res.json()
         if data.get("rt_cd") == "0":
             msg = f"[SUCCESS] CANCEL {symbol} order_id={order_id}"
-            print(msg)
             return TradeResult(True, "CANCEL", symbol, qty, 0, "market", order_id, msg)
 
         msg = f"[FAIL] {data.get('msg1', 'Unknown error')}"
-        print(msg)
         return TradeResult(False, "CANCEL", symbol, qty, 0, "market", message=msg)
 
     except requests.RequestException as e:
-        print("[DEBUG] CANCEL REQUEST EXCEPTION:", e)
-        if hasattr(e, "response") and e.response is not None:
-            print("[DEBUG] RAW RESPONSE:", e.response.text)
-        
         return TradeResult(False, "CANCEL", symbol, qty, 0, "market", message=str(e))
 

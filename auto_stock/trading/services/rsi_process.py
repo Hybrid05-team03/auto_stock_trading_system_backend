@@ -29,9 +29,9 @@ def get_rsi_signal(symbol: str, period: int, risk: str):
         raise ValueError(f"Invalid risk value: {risk}")
 
     thresholds = {
-        "low": 60,
-        "mid": 35,
-        "high": 30,
+        "low": 30,
+        "mid": 45,
+        "high": 60,
     }
     buy_thr = thresholds[risk]
     prices = fetch_price_series(symbol)
