@@ -1,7 +1,8 @@
 import os
-from celery import Celery
 from dotenv import load_dotenv
 
+from celery import Celery
+from celery.schedules import crontab
 
 # .env 자동 로딩
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -14,9 +15,10 @@ app = Celery("auto_stock")
 app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks()
 
-app.conf.beat_schedule.update({
-    "auto-rsi-trading-every-5-min": {
-        "task": "trading.tasks.auto_sell.auto_sell",
-        "schedule": 300,
-    }
-})
+# 미체결 주문건 재주문 태스크
+CELERY_BEAT_SCHEDULE = {
+    "retry-unfilled-sells-every-morning": {
+        "task": "trading.tasks.retry_unfilled_sells",
+        "schedule": crontab(hour=9, minute=1),  # 오전 9시 1분 정기 실행
+    },
+}

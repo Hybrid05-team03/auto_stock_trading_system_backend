@@ -7,7 +7,7 @@ from .serializers import OrderRequestSerializer
 from kis.api.quote import kis_get_market_cap
 from kis.data.search_code import mapping_code_to_name
 from kis.websocket.util.kis_data_save import subscribe_and_get_data
-from trading.tasks.auto_buy import auto_buy
+from trading.tasks.auto_order import auto_order
 
 from kis.websocket.trading_ws import order_sell, order_buy, order_cancel
 from kis.api.account import fetch_psbl_order, fetch_balance, fetch_recent_ccld
@@ -121,7 +121,7 @@ class AutoOrderCreateView(APIView):
         # 잔고를 받아, 매수 가능한지 검증
 
         # 자동 매매 태스크 실행
-        auto_buy.delay(serializer.instance.id)
+        auto_order.delay(serializer.instance.id)
 
         return Response({"message": "주문 요청이 접수되었습니다."}, status=201)
 
