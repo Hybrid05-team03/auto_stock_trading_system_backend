@@ -23,7 +23,7 @@ def auto_order(order_id):
         return
 
     # 2. 매수 요청
-    buy_result = request_buy(order)
+    buy_result = order_buy(order.symbol, qty=order.quantity, order_type="market")
 
     # 2-1. 매수 요청 실패
     if not buy_result.ok:
@@ -31,10 +31,11 @@ def auto_order(order_id):
         order.save()
         return
 
-    # 2-2. 매수 요청 성공 -> 체결 정보 저장
+    ## 매수 성고: 체결 정보 저장
+    time.sleep(1.2)
     exec_data = save_execution_data(order, buy_result, "BUY")
 
-    # 2-3. 매수 정보 저장
+    ## 매수 정보 저장
     order.status = "BUY_DONE"
     order.message = buy_result.message
     order.kis_order_id = buy_result.order_id
@@ -47,15 +48,24 @@ def auto_order(order_id):
     order.save()
 
     # 4. 매도 주문
-    sell_result = request_sell(order, target_price)
+    time.sleep(1.2)
+    sell_result = order_sell(order.symbol, order.quantity, target_price,"limit")
 
-    if sell_result.ok:
-        order.sell_order_id = sell_result.order_id
-        order.status = "SELL_DONE"
-        handle_sell_execution(order, sell_result)
-    else:
+    ## 매도 요청 실패
+    if not sell_result.ok:
         order.status = "SELL_REQUEST_FAILED"
         order.message = sell_result.message
+        order.save()
+        return
+
+    ## 매도 성공: 체결 정보 저장
+    time.sleep(1.2)
+    save_execution_data(order, sell_result, "SELL")
+
+    ## 매도 정보 저장
+    order.status = "SELL_DONE"
+    order.message = sell_result.message
+    order.sell_order_id = sell_result.order_id
     order.save()
 
 
@@ -63,24 +73,11 @@ def auto_order(order_id):
 def check_buy_signal(order: OrderRequest) -> bool:
     signal, rsi = get_rsi_signal(order.symbol, 20, order.risk)
     if signal != "BUY":
-        order.status = "BUY_REQUEST_FAILED"
         order.message = f"매수 신호 없음 (RSI={rsi})"
         order.save()
         logger.info("[AUTO-BUY] 매수 신호 없음")
         return False
     return True
-
-
-## 매수 요청
-def request_buy(order: OrderRequest):
-    return order_buy(order.symbol, qty=order.quantity, order_type="market")
-
-
-## 매수 체결 데이터 저장
-def handle_buy_execution(order: OrderRequest, buy_result):
-    time.sleep(1.2)
-    exec_data = save_execution_data(order, buy_result, "BUY")
-    return exec_data
 
 
 def get_tick(price: int) -> int:
@@ -106,20 +103,3 @@ def calculate_target_price(exec_price: int, target_profit: int) -> int:
 
     raw_price = exec_price * (1 + target_profit / 100)
     return normalize_price(int(raw_price))
-
-
-## 매도 주문 요청
-def request_sell(order: OrderRequest, target_price: int):
-    time.sleep(1.2)
-    return order_sell(
-        order.symbol,
-        order.quantity,
-        target_price,
-        "limit"
-    )
-
-
-## 매도 체결 데이터 처리
-def handle_sell_execution(order: OrderRequest, sell_result):
-    logger.info("[AUTO-SELL] 매도 요청 완료")
-    save_execution_data(order, sell_result, "SELL")
