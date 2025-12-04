@@ -4,6 +4,7 @@ ORDER_STATUS = [
     'REQUEST_FAILED',
 
     'BUYING',
+    'BUY_REQUEST_FAILED'
     'BUY_PENDING',
     'BUY_DONE',
 

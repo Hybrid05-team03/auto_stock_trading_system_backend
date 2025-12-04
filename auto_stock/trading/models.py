@@ -12,7 +12,7 @@ class OrderRequest(models.Model):
     risk = models.CharField(max_length=10)
 
     status = models.CharField(
-        max_length=20,
+        max_length=50,
         choices=[(s, s) for s in ORDER_STATUS], ## 상태값 제한
         default='PENDING'
     )
