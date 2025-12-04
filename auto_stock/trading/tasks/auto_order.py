@@ -31,22 +31,22 @@ def auto_order(order_id):
         order.save()
         return
 
-    # 2-2. 매수 요청 성공
+    # 2-2. 매수 요청 성공 -> 체결 정보 저장
+    exec_data = save_execution_data(order, buy_result, "BUY")
+
+    # 2-3. 매수 정보 저장
     order.status = "BUY_DONE"
     order.message = buy_result.message
     order.kis_order_id = buy_result.order_id
     order.save()
 
-    # 2-3. 매수 체결 정보 저장
-    exec_data = save_execution_data(order, buy_result, "BUY")
-
     # 3. 매도 목표가 계산
     target_price = calculate_target_price(exec_data.executed_price, order.target_profit)
-    order.target_price = target_price
     order.status = "SELL_PENDING"
+    order.target_price = target_price
     order.save()
 
-    # 6. 매도 주문
+    # 4. 매도 주문
     sell_result = request_sell(order, target_price)
 
     if sell_result.ok:
