@@ -2,7 +2,7 @@ import os
 import logging
 import django, dotenv
 from kis.api.util.overseas_index import extract_overseas_index_daily_price
-from kis.constants.const_index import OVERSEAS_INDEX_CODE_NAME_MAP
+from kis.constants.const_index import OVERSEAS_INDEX_CODE_NAME_MAP, INDEX_CODE_NAME_MAP
 from kis.api.util.request_real import request_get
 
 
@@ -19,54 +19,114 @@ django.setup()
 
 
 
-###### 현재 사용되지 않고 있음 ##############
-def kis_get_index_last2(code: str) -> dict:
-    path = os.getenv("KIS_BASE_URL")
+#----------------------------------------------------------------------
+# 국내 지수 기간별 조회 (Fallback용)
+#----------------------------------------------------------------------
+def fetch_domestic_index_period_series(
+        fid_input_iscd: str,
+        start_d: date,
+        end_d: date,
+        period_div_code: str = "D",
+) -> List[Dict[str, Any]]:
+    path = "/uapi/domestic-stock/v1/quotations/inquire-daily-indexchartprice"
     tr_id = os.getenv("DOMESTIC_INDEX_DAILY_TR_ID")
-
-    today_d = date.today()
-    start_d = today_d - timedelta(days=10)
 
     params = {
         "FID_COND_MRKT_DIV_CODE": "U",
-        "FID_INPUT_ISCD": code,
+        "FID_INPUT_ISCD": fid_input_iscd,
         "FID_INPUT_DATE_1": start_d.strftime("%Y%m%d"),
-        "FID_INPUT_DATE_2": today_d.strftime("%Y%m%d"),
-        "FID_PERIOD_DIV_CODE": "D",
+        "FID_INPUT_DATE_2": end_d.strftime("%Y%m%d"),
+        "FID_PERIOD_DIV_CODE": period_div_code,
     }
+    logger.debug("[DOMESTIC_PERIOD] request params=%s", params)
 
     try:
         data = request_get(path, tr_id, params)
+
     except Exception as e:
-        logger.error(f"[KIS INDEX ERROR] Failed to fetch index {code}: {e}")
-        return {"today": None, "yesterday": None}
+        logger.error("[DOMESTIC_PERIOD] request error: %s", e)
+        return []
 
-    rows = data.get("output2", [])
+    if data.get("rt_cd") != "0":
+        logger.error(
+            "[DOMESTIC_PERIOD] KIS error rt_cd=%s msg_cd=%s msg1=%s",
+            data.get("rt_cd"),
+            data.get("msg_cd"),
+            data.get("msg1"),
+        )
+        return []
+
+    rows = data.get("output2") or []
+    if isinstance(rows, dict):
+        rows = [rows]
+
+    return rows
+
+
+# --------------------------------------------------------------------
+# 국내 지수 스냅샷 (오늘/전일 종가) – 기간별시세 기반
+# --------------------------------------------------------------------
+def fetch_domestic_index_snapshot(code: str) -> Optional[Dict[str, Optional[float]]]:
+    """
+    국내 지수(코스피/코스닥)에 대해 기간별시세 API로 오늘/전일 '종가'를 가져온다.
+    """
+    name = INDEX_CODE_NAME_MAP.get(code)
+    if not name:
+        logger.error("[DOMESTIC_PERIOD] unknown index code=%s", code)
+        return None
+
+    today_d = date.today()
+    start_d = today_d - timedelta(days=10)  # 여유 있게 10일치만 조회
+
+    rows = fetch_domestic_index_period_series(
+        fid_input_iscd=code,
+        start_d=start_d,
+        end_d=today_d,
+        period_div_code="D",
+    )
+
     if not rows:
-        return {"today": None, "yesterday": None}
+        logger.warning(
+            "[DOMESTIC_PERIOD] no rows for code=%s",
+            code,
+        )
+        return None
 
-    parsed = []
-    for row in rows:
-        ymd = row.get("stck_bsop_date")
-        price_str = row.get("bstp_nmix_prpr")
-        if not ymd or not price_str:
-            continue
+    def _get_date(r: Dict[str, Any]) -> str:
+        return r.get("stck_bsop_date") or ""
+
+    rows_sorted = sorted(rows, key=_get_date)
+
+    if not rows_sorted:
+        return None
+
+    today_row = rows_sorted[-1]
+    yest_row = rows_sorted[-2] if len(rows_sorted) > 1 else None
+
+    # 국내 지수 output2 필드: bstp_nmix_prpr (현재가/종가)
+    def _extract_price(row):
+        if not row: return None
         try:
-            close = float(price_str)
-            parsed.append({"date": ymd, "close": close})
+            return float(row.get("bstp_nmix_prpr"))
         except:
-            continue
+            return None
 
-    if len(parsed) < 2:
-        return {"today": None, "yesterday": None}
+    today_price = _extract_price(today_row)
+    yesterday_price = _extract_price(yest_row)
 
-    parsed.sort(key=lambda r: r["date"])
+    if today_price is None:
+        logger.warning(
+            "[DOMESTIC_PERIOD] cannot extract today price for code=%s row=%s",
+            code,
+            today_row,
+        )
+        return None
+
     return {
-        "today": parsed[-1],
-        "yesterday": parsed[-2]
+        "name": name,
+        "today": today_price,
+        "yesterday": yesterday_price,
     }
-
-
 
 
 #----------------------------------------------------------------------
