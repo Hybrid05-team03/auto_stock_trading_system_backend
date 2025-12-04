@@ -15,10 +15,10 @@ app = Celery("auto_stock")
 app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks()
 
-# 미체결 주문건 재주문 태스크
-CELERY_BEAT_SCHEDULE = {
+# 미체결 주문건 재주문 태스크 스케줄 등록
+app.conf.beat_schedule = {
     "retry-unfilled-sells-every-morning": {
-        "task": "trading.tasks.retry_unfilled_sells",
-        "schedule": crontab(hour=9, minute=1),  # 오전 9시 1분 정기 실행
-    },
+        "task": "trading.tasks.auto_re_order.retry_unfilled_sells",
+        "schedule": crontab(hour=9, minute=1),
+    }
 }

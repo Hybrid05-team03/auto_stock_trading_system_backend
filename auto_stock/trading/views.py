@@ -103,6 +103,7 @@ class AutoOrderCreateView(APIView):
                 "executions": exec_list,
                 "strategy": order.strategy,
                 "gap": order.target_profit,
+                "quantity": order.quantity,
                 "status": order.status,
             })
 
