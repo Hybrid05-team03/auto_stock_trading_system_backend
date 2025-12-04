@@ -5,7 +5,7 @@ APP_KEY = os.getenv("APP_KEY_REAL")
 APP_SECRET = os.getenv("APP_SECRET_REAL")
 
 TOKEN_KEY_REAL = "kis_access_token_real"
-TTL = 23 * 3600   # 23시간 TTL
+TTL = 21 * 3600   # 21시간 TTL
 
 r = redis.Redis(decode_responses=True)
 
@@ -28,7 +28,7 @@ def _fetch_token() -> str:
 
     token_real = data.get("access_token") or data.get("accessToken")
 
-    # Redis 캐싱 만료 (TTL=23시간)
+    # Redis 캐싱 만료 (TTL=21시간)
     r.set(TOKEN_KEY_REAL, token_real, ex=TTL)
     logger.info("[TOKEN] KIS 실전 토큰 신규 발급 ")
 
