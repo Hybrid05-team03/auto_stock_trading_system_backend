@@ -1,66 +1,71 @@
 import logging, time
+from django.utils import timezone
 from auto_stock.celery import app
-from trading.data.trading_result import TradeResult
-from trading.models import OrderRequest
-from kis.websocket.trading_ws import order_buy, order_sell, order_cancel
-from kis.api.account import fetch_recent_ccld, fetch_unfilled_status
+from trading.models import OrderRequest, OrderExecution
+from kis.websocket.trading_ws import order_sell, order_cancel
+from trading.tasks.auto_order import auto_order
 from trading.services.save_order_execution import save_execution_data
 
 logger = logging.getLogger(__name__)
 
 
 ## 미체결 매수건 조회 후 재주문
+@app.task
+def retry_unfilled_buys():
+    orders = OrderRequest.objects.filter(
+        status__in=["BUY_PENDING", "BUY_REQUEST_FAILED"]
+    )
+    today = timezone.now().date()
+
+    for order in orders:
+        # 기존 주문이 과거 것이라면 취소
+        old_exec = (
+            OrderExecution.objects.filter(
+                order_request=order,
+                executed_side="BUY",
+                executed_at__date__lt=today,
+            )
+            .order_by("-executed_at")
+            .first()
+        )
+
+        if old_exec:
+            order_cancel(symbol=order.symbol, order_id=old_exec.kis_order_id)
+
+        # 매수 → 매도까지 전체 프로세스 재실행
+        auto_order.delay(order.id)
 
 
 ## 미체결 매도건 조회 후 재주문
 @app.task
 def retry_unfilled_sells():
-    # 미체결 매도건 조회
-    orders = (
-        OrderRequest.objects
-        .filter(status="SELL_PENDING")
-    )
+    # 미체결 매도건 DB 조회
+    orders = (OrderRequest.objects.filter(status="SELL_PENDING"))
+    today = timezone.now().date()
 
     for order in orders:
-        status = fetch_unfilled_status(order.sell_order_id, order.symbol)
-        if not status:
-            continue
+        # 체결 정보 조회
+        order_execution = (OrderExecution.objects.filter(
+            order_request=order, executed_side="SELL", executed_at__date__lt=today,
+        ).order_by("-executed_at").first())
 
-        pending = status["remaining_qty"]
-        # 전체 체결
-        if pending == 0:
-            logger.info("[SELL-DONE] 매수 완료")
-            # 매도 체결 정보 조회 및 저장
-            sell_exec_result = TradeResult(
-                ok=True,
-                order_id=order.sell_order_id,
-                symbol=order.symbol,
-                message="SELL Filled"
-            )
-            save_execution_data(order, sell_exec_result, "SELL")
-            order.status = "SELL_DONE"
+        # 주문 취소
+        if order_execution != None:
+            logger.info("NONE아니다-----------")
+            order_cancel(symbol=order.symbol, order_id=order_execution.kis_order_id, qty=order.quantity)
+
+        # 다시 매도 주문
+        sell_result = order_sell(order.symbol, order.quantity, order.target_price, "limit")
+
+        if not sell_result.ok:
+            order.status  ="SELL_REQUEST_FAILED"
             order.save()
-            continue
+            return
 
-        # 재주문
-        if not cancel_kis_order(order.symbol, order.sell_order_id):
-            continue
+        ## 매도 체결 정보 저장
+        time.sleep(1.2)
+        save_execution_data(order, sell_result, "SELL")
 
-        new_result = order_sell(
-            symbol=order.symbol,
-            qty=pending,
-            price=order.target_price,
-            order_type="limit",
-        )
-
-        if new_result.ok:
-            order.sell_order_id = new_result.order_id
-            order.save()
-        else:
-            logger.warning(f"[SELL-RETRY] 재주문 실패: {new_result.message}")
-
-
-## 주문 취소 함수
-def cancel_kis_order(symbol: str, order_id: str):
-    order_cancel(symbol, order_id, 0, True)
-    return ""
+        ## 매도 정보 저장
+        order.status = "SELL_DONE"
+        order.save()

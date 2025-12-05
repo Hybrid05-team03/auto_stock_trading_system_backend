@@ -17,8 +17,12 @@ app.autodiscover_tasks()
 
 # 미체결 주문건 재주문 태스크 스케줄 등록
 app.conf.beat_schedule = {
-    "retry-unfilled-sells-every-morning": {
+    "retry-unfilled-sells-per-1min": {
         "task": "trading.tasks.auto_re_order.retry_unfilled_sells",
-        "schedule": crontab(hour=9, minute=1),
+        "schedule": 60, # execute per 1min
+    },
+    "retry-unfilled-buys-per-1min": {
+        "task": "trading.tasks.auto_re_order.retry_unfilled_buys",
+        "schedule": 60,  # execute per 1min
     }
 }
