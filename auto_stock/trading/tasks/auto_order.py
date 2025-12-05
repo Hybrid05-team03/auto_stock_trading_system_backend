@@ -3,7 +3,8 @@ import logging, time
 from auto_stock.celery import app
 from trading.models import OrderRequest
 from trading.services.rsi_process import get_rsi_signal
-from trading.services.save_order_execution import save_execution_data
+from trading.services.save_order_execution import save_execution_data, save_execution_data_sell
+from trading.services.calculate_order import calculate_target_price
 
 from kis.websocket.trading_ws import order_buy, order_sell
 
@@ -31,7 +32,7 @@ def auto_order(order_id):
         order.save()
         return
 
-    ## 매수 성공: 체결 정보 저장
+    # 매수 성공: 체결 정보 저장
     time.sleep(1.2)
     exec_data = save_execution_data(order, buy_result, "BUY")
 
@@ -57,7 +58,7 @@ def auto_order(order_id):
 
     ## 매도 성공: 체결 정보 저장
     time.sleep(1.2)
-    save_execution_data(order, sell_result, "SELL")
+    save_execution_data_sell(order, sell_result)
 
     ## 매도 정보 저장
     order.status = "SELL_DONE"
@@ -73,28 +74,3 @@ def check_buy_signal(order: OrderRequest) -> bool:
         logger.info("[AUTO-BUY] 매수 신호 없음")
         return False
     return True
-
-
-def get_tick(price: int) -> int:
-    if price < 2000: return 1
-    elif price < 5000: return 5
-    elif price < 10000: return 10
-    elif price < 50000: return 50
-    elif price < 100000: return 100
-    elif price < 500000: return 500
-    else: return 1000
-
-
-## 매도 목표가 반올림 처리
-def normalize_price(price: int) -> int:
-    tick = get_tick(price)
-    return (price // tick) * tick
-
-
-## 매도 목표가 계산
-def calculate_target_price(exec_price: int, target_profit: int) -> int:
-    if target_profit == 0:
-        return exec_price
-
-    raw_price = exec_price * (1 + target_profit / 100)
-    return normalize_price(int(raw_price))
