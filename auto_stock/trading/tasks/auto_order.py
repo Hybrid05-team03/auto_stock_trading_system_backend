@@ -31,14 +31,12 @@ def auto_order(order_id):
         order.save()
         return
 
-    ## 매수 성고: 체결 정보 저장
+    ## 매수 성공: 체결 정보 저장
     time.sleep(1.2)
     exec_data = save_execution_data(order, buy_result, "BUY")
 
     ## 매수 정보 저장
     order.status = "BUY_DONE"
-    order.message = buy_result.message
-    order.kis_order_id = buy_result.order_id
     order.save()
 
     # 3. 매도 목표가 계산
@@ -54,7 +52,6 @@ def auto_order(order_id):
     ## 매도 요청 실패
     if not sell_result.ok:
         order.status = "SELL_REQUEST_FAILED"
-        order.message = sell_result.message
         order.save()
         return
 
@@ -64,8 +61,6 @@ def auto_order(order_id):
 
     ## 매도 정보 저장
     order.status = "SELL_DONE"
-    order.message = sell_result.message
-    order.sell_order_id = sell_result.order_id
     order.save()
 
 
