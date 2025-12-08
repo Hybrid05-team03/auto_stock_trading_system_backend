@@ -4,10 +4,9 @@ from rest_framework.response import Response
 from .models import OrderRequest, OrderExecution
 from .serializers import OrderRequestSerializer
 
-from kis.api.quote import kis_get_market_cap
 from kis.data.search_code import mapping_code_to_name
-from kis.websocket.util.kis_data_save import subscribe_and_get_data
 from trading.tasks.auto_order import auto_order
+from trading.services.save_order_request import cancel_order_request
 
 from kis.websocket.trading_ws import order_sell, order_buy, order_cancel
 from kis.api.account import fetch_psbl_order, fetch_balance, fetch_recent_ccld
@@ -99,6 +98,7 @@ class AutoOrderCreateView(APIView):
 
             name = mapping_code_to_name(order.symbol)
             response_list.append({
+                "order_id": order.id,
                 "symbol": order.symbol,
                 "name": name,
                 "executions": exec_list,
@@ -166,7 +166,30 @@ class ManualSellView(APIView):
         })
 
 
-## 주문 취소
+## 자체 주문 취소
+class OrderRequestCancelView(APIView):
+    def post(self, request):
+        order_id = request.query_params.get("order_id")
+
+        if order_id is None:
+            return Response({"message": "order_id is required"}, status=400)
+
+        try:
+            order_id = int(order_id)
+        except ValueError:
+            return Response({"message": "order_id must be integer"}, status=400)
+
+        # 주문 취소
+        result = cancel_order_request(order_id)
+
+        # 주문 취소 완료
+        if result:
+            return Response({"message": f"{order_id}번 주문건 취소 완료"}, status=200)
+
+        return Response({"message": "order not found"}, status=404)
+
+
+## KIS 주문 취소
 class OrderCancelView(APIView):
     def post(self, request):
         symbol = request.data.get("symbol")
