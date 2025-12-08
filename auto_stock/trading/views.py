@@ -91,7 +91,8 @@ class AutoOrderCreateView(APIView):
             exec_list = [
                 {
                     "side": exec.executed_side,
-                    "price": exec.executed_price
+                    "price": exec.executed_price,
+                    "kis_order_id": exec.kis_order_id,
                 }
                 for exec in executions
             ]
@@ -170,7 +171,7 @@ class OrderCancelView(APIView):
     def post(self, request):
         symbol = request.data.get("symbol")
         order_id = request.data.get("order_id")
-        qty = int(request.data.get("qty", 0))
+        qty = int(request.data.get("quantity", 0))
         total = request.data.get("total", False)
 
         if not symbol or not order_id:
@@ -186,6 +187,7 @@ class OrderCancelView(APIView):
             "message": result.message,
             "order_id": result.order_id,
         })
+
 
 ## 사용자 최근 체결가 조회 (주문번호로 단건 조회)
 class RecentCCLD(APIView):
