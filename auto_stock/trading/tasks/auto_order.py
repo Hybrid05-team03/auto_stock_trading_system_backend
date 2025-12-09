@@ -59,7 +59,6 @@ def auto_order(order_id):
 
     ## 체결 정보
     order.kis_order_id = sell_result.order_id
-    order.status = "SELL_PENDING"
     order.save()
 
     # 매도 체결 정보 조회
