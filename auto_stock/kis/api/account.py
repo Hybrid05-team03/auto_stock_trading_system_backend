@@ -89,7 +89,7 @@ def fetch_balance():
 
 
 ## 최근 거래 내역 중 체결 정보 조회
-def fetch_recent_ccld(kis_order_id: str, symbol: str):
+def fetch_recent_ccld(kis_order_id: str, symbol: str, dvsd_code: str):
     path = "/uapi/domestic-stock/v1/trading/inquire-daily-ccld"
     tr_id = os.getenv("RECENT_TR_ID")
 
@@ -100,7 +100,7 @@ def fetch_recent_ccld(kis_order_id: str, symbol: str):
         "ACNT_PRDT_CD": ACNT_PRDT_CD,
         "INQR_STRT_DT": today,
         "INQR_END_DT": today,
-        "SLL_BUY_DVSN_CD": "00",
+        "SLL_BUY_DVSN_CD": dvsd_code,
         "PDNO": symbol,  # 상품 번호
         "ORD_GNO_BRNO": "",
         "ODNO": kis_order_id, # 주문 번호

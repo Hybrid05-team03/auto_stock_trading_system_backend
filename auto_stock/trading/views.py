@@ -224,7 +224,8 @@ class RecentCCLD(APIView):
                 "message": "요청 시 kis_order_id, symbol 모두 필요"
             }, status=400)
 
-        result = fetch_recent_ccld(kis_order_id, symbol)
+        ## 매수, 매도 전체 조회
+        result = fetch_recent_ccld(kis_order_id, symbol, "01")
 
         return Response({
             "ok": True,

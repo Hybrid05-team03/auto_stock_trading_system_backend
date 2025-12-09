@@ -6,7 +6,7 @@ from auto_stock.celery import app
 from trading.models import OrderRequest, OrderExecution
 from kis.websocket.trading_ws import order_sell, order_cancel
 from trading.tasks.auto_order import auto_order
-from trading.services.save_order_execution import save_execution_data_sell
+from trading.services.save_order_execution import save_execution_data
 from trading.services.calculate_order import calculate_target_price
 
 logger = logging.getLogger(__name__)
@@ -96,7 +96,7 @@ def retry_unfilled_sells():
         ## 매도 체결 정보 저장
         time.sleep(1.2)
         logger.info(f"체결 정보 ========= {sell_result}")
-        save_execution_data_sell(order, sell_result)
+        save_execution_data(order, sell_result, "SELL")
         ## 매도 정보 저장
         order.status = "SELL_DONE"
         order.save()

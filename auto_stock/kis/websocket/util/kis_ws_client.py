@@ -2,14 +2,19 @@ import os, asyncio, json, redis, signal, logging
 import websockets
 import django, dotenv
 
+dotenv.load_dotenv(".env")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "auto_stock.settings")
+django.setup()
+
+from trading.models import OrderRequest
+from trading.services.save_order_execution import save_execution_data
+
 from kis.auth.kis_ws_key import get_web_socket_key
 from kis.websocket.parser.quote_parser import parse_quote
 from kis.websocket.parser.price_parser import parse_price
 from kis.websocket.parser.index_parser import parse_index
+from kis.websocket.parser.execution_parser import parse_exec
 
-dotenv.load_dotenv(".env")
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "auto_stock.settings")
-django.setup()
 
 # ------------------ 환경 변수 ------------------
 WS_BASE_URL_REAL = os.getenv("WS_BASE_URL_REAL")
@@ -26,6 +31,48 @@ stop_event = asyncio.Event()
 send_queue = asyncio.Queue()  # 소켓 구독 요청 저장 큐
 subscriptions = {}  # {(tr_id, tr_key): redis_prefix}
 shared_ws = None  # 하나의 웹 소켓 공유
+
+
+# 체결 데이터 저장 작업
+def handle_execution(parsed):
+    """
+    H0STCNI0 체결 데이터 처리:
+    - 체결 발생 시 OrderRequest 조회
+    - 체결 데이터 저장
+    - 상태 SELL_DONE 으로 변경
+    """
+    try:
+        order_no = parsed["order_no"]      # 주문번호
+        cntg_yn = parsed["cntg_yn"]        # 체결 여부 (1: 체결, 2: 정정/취소)
+
+        # 체결이 아닌 경우 무시
+        if cntg_yn != "1":
+            return
+
+        # DB에서 주문 찾기
+        try:
+            order = OrderRequest.objects.get(kis_order_id=order_no)
+        except OrderRequest.DoesNotExist:
+            logger.warning(f"[EXEC] 주문번호 {order_no} 에 해당하는 OrderRequest 없음")
+            return
+
+        logger.info(f"[EXEC] 매도 체결 발생 → 주문번호 {order_no}")
+
+        # 체결 정보 저장
+        save_execution_data(order, {
+            "EXEC_QTY": parsed["qty"],
+            "EXEC_PRICE": parsed["price"],
+            "EXEC_TIME": parsed["time"],
+        }, "SELL")
+
+        # 상태 업데이트
+        order.status = "SELL_DONE"
+        order.save()
+
+        logger.info(f"[EXEC] SELL_DONE 업데이트 완료 → 주문 {order_no}")
+
+    except Exception as e:
+        logger.error(f"[EXEC] 체결 처리 실패: {e}")
 
 
 # ------------------ 구독 작업 ------------------
@@ -98,10 +145,15 @@ async def ws_recv_loop():
                     parsed = parse_quote(raw)
                 elif redis_prefix == "index":
                     parsed = parse_index(raw)
+                elif redis_prefix == "exec":
+                    parsed = parse_exec(raw)
                 else:
                     parsed = None
 
                 if parsed:
+                    # 체결 데이터
+                    if redis_prefix == "exec":
+                        handle_execution(parsed)
                     redis_key = f"{redis_prefix}:{tr_key}"
                     r.set(redis_key, json.dumps(parsed), ex=REDIS_TTL)
                     logger.info(f"[WS:{tr_id}] 저장됨 → {redis_key}")
