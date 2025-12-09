@@ -14,7 +14,7 @@ class OrderRequest(models.Model):
     status = models.CharField(
         max_length=50,
         choices=[(s, s) for s in ORDER_STATUS], ## 상태값 제한
-        default='PENDING'
+        default='BUY_PENDING'
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
