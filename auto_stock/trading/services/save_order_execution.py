@@ -17,15 +17,16 @@ def save_execution_data(order: OrderRequest, executed_result: TradeResult, side:
     done_status = "BUY_DONE" if side == "BUY" else "SELL_DONE"
     dvsd_code = "01" if side == "SELL" else "02" # 01(매도) 02(매수)
 
-    max_wait = 60  # 최대 20초 동안 반복 조회
     interval = 2   # 2초 간격
 
-    for _ in range(max_wait // interval):
+    exec_data = fetch_recent_ccld(executed_result.order_id, executed_result.symbol, dvsd_code)
+
+    while exec_data is None :
         time.sleep(interval)
         exec_data = fetch_recent_ccld(executed_result.order_id, executed_result.symbol, dvsd_code)
 
         ## 체결 데이터 조회 성공
-        if exec_data:
+        if (exec_data):
             logger.info(f"[INFO] 체결 데이터 조회={exec_data}")
             break
 
