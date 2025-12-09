@@ -1,15 +1,18 @@
-import logging, time
+import os, logging, time, redis
 
 from auto_stock.celery import app
 from trading.models import OrderRequest
 from trading.services.rsi_process import get_rsi_signal
-from trading.services.save_order_execution import save_execution_data, save_execution_data_sell
+from trading.services.save_order_execution import save_execution_data
 from trading.services.calculate_order import calculate_target_price
-
 from kis.websocket.trading_ws import order_buy, order_sell
 
 logger = logging.getLogger(__name__)
 
+tr_id = os.getenv("ORDER_EXECUTION_TR_ID")
+## TODO DB에서 직접 불러와 사용하도록 수정
+hts_id_key = os.getenv("HTS_ID")
+r = redis.Redis(decode_responses=True)
 
 ## celery -A auto_stock worker -l info
 @app.task
@@ -34,14 +37,12 @@ def auto_order(order_id):
 
     # 매수 성공: 체결 정보 저장
     time.sleep(1.2)
+    # 매수 체결 정보 조회
     exec_data = save_execution_data(order, buy_result, "BUY")
-
-    ## 매수 정보 저장
-    order.status = "BUY_DONE"
-    order.save()
 
     # 3. 매도 목표가 계산
     target_price = calculate_target_price(exec_data.executed_price, order.target_profit)
+
     order.status = "SELL_PENDING"
     order.target_price = target_price
     order.save()
@@ -56,13 +57,13 @@ def auto_order(order_id):
         order.save()
         return
 
-    ## 매도 성공: 체결 정보 저장
-    time.sleep(1.2)
-    save_execution_data_sell(order, sell_result)
-
-    ## 매도 정보 저장
-    order.status = "SELL_DONE"
+    ## 체결 정보
+    order.kis_order_id = sell_result.order_id
+    order.status = "SELL_PENDING"
     order.save()
+
+    # 매도 체결 정보 조회
+    save_execution_data(order, buy_result, "SELL")
 
 
 ## 매수 시그널 검사
