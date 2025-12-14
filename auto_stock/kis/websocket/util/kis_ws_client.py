@@ -22,7 +22,9 @@ CUST_TYPE = os.getenv("CUST_TYPE")
 REDIS_TTL = 60 * 60 * 18
 REDIS_CHANNEL = "subscribe.add"
 
-r = redis.Redis(decode_responses=True)
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 

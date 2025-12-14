@@ -14,7 +14,8 @@ _WS_KEY_CACHE = {"approval_key": None, "approval_expires_at": 0}
 
 APPROVAL_TTL = 60 * 60 * 12  # 12시간 (승인키는 최대 24시간 유효)
 
-r = redis.Redis(decode_responses=True)
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 def _fetch_approval_key():
     url = f"{BASE_URL}/oauth2/Approval"

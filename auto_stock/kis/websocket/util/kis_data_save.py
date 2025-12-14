@@ -1,7 +1,7 @@
 import os, time, json, redis
 
 
-REDIS_URL = os.getenv("REDIS_URL")
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 

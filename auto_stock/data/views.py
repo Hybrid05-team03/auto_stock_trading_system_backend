@@ -18,7 +18,7 @@ from kis.api.util.market_time import is_after_market_close
 
 logger = logging.getLogger(__name__)
 
-REDIS_URL = os.getenv("REDIS_URL")
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 # ------------------------------------------------------------

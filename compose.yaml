@@ -1,0 +1,70 @@
+services:
+# Redis container
+  redis:
+    image: redis:7-alpine
+    container_name: auto-redis
+    restart: unless-stopped
+
+# Web container
+  web:
+    build:
+      context: .
+    image: auto-stock:test
+    container_name: auto-stock-web
+    ports:
+      - "8000:8000"
+    env_file:
+      # from user space
+      - ${HOME}/auto_stock.secret.env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - redis
+
+  # Run migrations
+  migrate:
+    image: auto-stock:test
+    command: ["sh","-lc","cd /app/auto_stock && python manage.py makemigrations --noinput && python manage.py migrate --noinput"]
+    env_file:
+      - ${HOME}/auto_stock.secret.env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - redis
+    profiles: ["ops"]
+
+  # Celery worker container
+  celery-worker:
+    image: auto-stock:test
+    container_name: auto-stock-celery-worker
+    restart: unless-stopped
+    env_file:
+      - ${HOME}/auto_stock.secret.env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+
+    # celery 실행 시 import 경로 안정화
+    working_dir: /app/auto_stock
+    command: >
+      sh -lc "
+      celery -A auto_stock worker -l info
+      "
+    depends_on:
+      - redis
+
+  # Celery beat container
+  celery-beat:
+    image: auto-stock:test
+    container_name: auto-stock-celery-beat
+    restart: unless-stopped
+    env_file:
+      - ${HOME}/auto_stock.secret.env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    working_dir: /app/auto_stock
+    command: >
+      sh -lc "
+      celery -A auto_stock beat -l info
+      "
+    depends_on:
+      - redis

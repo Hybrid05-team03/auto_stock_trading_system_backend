@@ -8,7 +8,9 @@ from typing import List, Dict, Union
 from kis.api.util.request import request_get
 
 logger = logging.getLogger(__name__)
-r = redis.Redis(decode_responses=True)  # Redis 연결 (기본)
+
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 DailyPriceRow = Dict[str, Union[str, float, int]]
 
