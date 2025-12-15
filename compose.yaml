@@ -1,56 +1,46 @@
 services:
-# Redis container
+  # Redis
   redis:
     image: redis:7-alpine
     container_name: auto-redis
     restart: unless-stopped
 
-
-  # Run migrations
+  # Migration
   migrate:
     image: auto-stock:test
-    command: ["sh","-lc","cd /app/auto_stock && python manage.py makemigrations --noinput && python manage.py migrate --noinput"]
+    command: ["sh", "-c", "python manage.py makemigrations --noinput && python manage.py migrate --noinput"]
     env_file:
       - ${HOME}/auto_stock.secret.env
     environment:
       REDIS_URL: redis://redis:6379/0
     profiles: ["ops"]
 
-# Web container
+  # Web Server (Uvicorn)
   web:
     build:
       context: .
     image: auto-stock:test
     container_name: auto-stock-web
-    ports:
-      - "8000:8000"
     env_file:
-      # from user space
       - ${HOME}/auto_stock.secret.env
     environment:
       REDIS_URL: redis://redis:6379/0
-    command: >
-      sh -lc "
-      cd /app/auto_stock &&
-      uvicorn auto_stock.asgi:application --host 0.0.0.0 --port 8000
-      "
+    ports:
+      - "8000:8000"
+    command: ["uvicorn", "auto_stock.asgi:application", "--host", "0.0.0.0", "--port", "8000"]
 
-  # WS worker container 
+  # Websocket Worker
   websocket:
-    env_file:
-      - ${HOME}/auto_stock.secret.env
     image: auto-stock:test
     container_name: auto-stock-websocket
     restart: unless-stopped
+    env_file:
+      - ${HOME}/auto_stock.secret.env
     environment:
       REDIS_URL: redis://redis:6379/0
-    working_dir: /app/auto_stock
-    command: >
-      sh -lc "
-      python -m kis.websocket.util.kis_ws_client
-      "
+    command: ["python", "-m", "kis.websocket.util.kis_ws_client"]
 
-  # Celery worker container
+  # Celery Worker
   celery-worker:
     image: auto-stock:test
     container_name: auto-stock-celery-worker
@@ -59,13 +49,9 @@ services:
       - ${HOME}/auto_stock.secret.env
     environment:
       REDIS_URL: redis://redis:6379/0
-    working_dir: /app/auto_stock
-    command: >
-      sh -lc "
-      celery -A auto_stock worker -l info
-      "
+    command: ["celery", "-A", "auto_stock", "worker", "-l", "info"]
 
-  # Celery beat container
+  # Celery Beat
   celery-beat:
     image: auto-stock:test
     container_name: auto-stock-celery-beat
@@ -74,14 +60,4 @@ services:
       - ${HOME}/auto_stock.secret.env
     environment:
       REDIS_URL: redis://redis:6379/0
-    working_dir: /app/auto_stock
-    command: >
-      sh -lc "
-      celery -A auto_stock beat -l info
-      "
-
-networks:
-  default:
-    driver: bridge
-    driver_opts:
-      com.docker.network.driver.mtu: "1400"
+    command: ["celery", "-A", "auto_stock", "beat", "-l", "info"]
