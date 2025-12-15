@@ -14,8 +14,6 @@ services:
       - ${HOME}/auto_stock.secret.env
     environment:
       REDIS_URL: redis://redis:6379/0
-    depends_on:
-      - redis
     profiles: ["ops"]
 
 # Web container
@@ -31,8 +29,11 @@ services:
       - ${HOME}/auto_stock.secret.env
     environment:
       REDIS_URL: redis://redis:6379/0
-    depends_on:
-      - redis
+    command: >
+      sh -lc "
+      cd /app/auto_stock &&
+      uvicorn auto_stock.asgi:application --host 0.0.0.0 --port 8000
+      "
 
   # WS worker container 
   websocket:
@@ -63,8 +64,6 @@ services:
       sh -lc "
       celery -A auto_stock worker -l info
       "
-    depends_on:
-      - redis
 
   # Celery beat container
   celery-beat:
@@ -80,5 +79,9 @@ services:
       sh -lc "
       celery -A auto_stock beat -l info
       "
-    depends_on:
-      - redis
+
+networks:
+  default:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: "1400"
