@@ -1,10 +1,6 @@
 # Base image
 FROM python:3.13-slim
 
-# 필수인가?
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
 # Working directory
 WORKDIR /app
 
@@ -20,9 +16,6 @@ COPY . /app
 # Copy entrypoint.sh
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
-
-# 필수인가?
-EXPOSE 8000
 
 # Run entrypoint.sh
 CMD ["/entrypoint.sh"]

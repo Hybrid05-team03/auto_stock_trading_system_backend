@@ -5,6 +5,19 @@ services:
     container_name: auto-redis
     restart: unless-stopped
 
+
+  # Run migrations
+  migrate:
+    image: auto-stock:test
+    command: ["sh","-lc","cd /app/auto_stock && python manage.py makemigrations --noinput && python manage.py migrate --noinput"]
+    env_file:
+      - ${HOME}/auto_stock.secret.env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - redis
+    profiles: ["ops"]
+
 # Web container
   web:
     build:
@@ -21,17 +34,20 @@ services:
     depends_on:
       - redis
 
-  # Run migrations
-  migrate:
-    image: auto-stock:test
-    command: ["sh","-lc","cd /app/auto_stock && python manage.py makemigrations --noinput && python manage.py migrate --noinput"]
+  # WS worker container 
+  websocket:
     env_file:
       - ${HOME}/auto_stock.secret.env
+    image: auto-stock:test
+    container_name: auto-stock-websocket
+    restart: unless-stopped
     environment:
       REDIS_URL: redis://redis:6379/0
-    depends_on:
-      - redis
-    profiles: ["ops"]
+    working_dir: /app/auto_stock
+    command: >
+      sh -lc "
+      python -m kis.websocket.util.kis_ws_client
+      "
 
   # Celery worker container
   celery-worker:
@@ -42,8 +58,6 @@ services:
       - ${HOME}/auto_stock.secret.env
     environment:
       REDIS_URL: redis://redis:6379/0
-
-    # celery 실행 시 import 경로 안정화
     working_dir: /app/auto_stock
     command: >
       sh -lc "
