@@ -5,7 +5,7 @@ import numpy as np
 from datetime import date, timedelta
 from typing import List, Dict, Union
 
-from kis.api.util.request import request_get
+from kis.api.util.request_real import request_get
 
 logger = logging.getLogger(__name__)
 

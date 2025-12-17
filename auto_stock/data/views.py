@@ -102,59 +102,12 @@ class RealtimeQuoteView(APIView):
         return Response({"stock": results}, status=200)
 
 
-# ------------------------------------------------------------
 # 실시간 지수 조회 (WebSocket + REST)
-# ------------------------------------------------------------
 class RealtimeIndexView(APIView):
     def get(self, request):
-        tr_id = os.getenv("INDEX_REALTIME_TR_ID")
-        results = []
+        payload = get_realtime_index_payload()
+        return Response(payload, status=200)
 
-        # 1) 국내 지수 2종 (코스피/코스닥) - WebSocket
-        # 장 운영 시간인지 확인 (True=장중, False=장마감)
-        # is_after_market_close() returns True if market is OPEN, False if CLOSED (based on user info)
-
-        is_market_open = is_after_market_close()
-
-        for code, name in INDEX_CODE_NAME_MAP.items():
-            yesterday = get_or_set_index_yesterday(code)
-            
-            if is_market_open:
-                ws_data = subscribe_and_get_data(tr_id, code, "index", timeout=3)
-            else:
-                ws_data = get_cached_data(code, "index")
-
-            if ws_data and ws_data.get("price"):
-                results.append({
-                    "name": name,
-                    "yesterday": yesterday,
-                    "today": ws_data["price"],
-                })
-            else:
-                # Backup: 캐싱된 데이터가 없을 시, REST API로 조회
-                snap = fetch_domestic_index_snapshot(code)
-                if snap:
-                    results.append({
-                        "name": snap["name"],
-                        "yesterday": snap.get("yesterday"),
-                        "today": snap["today"],
-                    })
-
-        # 2) 해외 지수 2종 (달러환율 / 나스닥100) - REST
-        for index_key in OVERSEAS_INDEX_CODE_NAME_MAP.keys():
-            snap = fetch_overseas_index_snapshot(index_key)
-            if not snap:
-                continue
-
-            results.append({
-                "name": snap["name"],
-                "yesterday": snap.get("yesterday"),
-                "today": snap["today"],
-            })
-
-        if results:
-            return Response({"indices": results})
-        return Response({"message": "incomplete index data"}, status=204)
 
 
 ## 인기 종목 조회

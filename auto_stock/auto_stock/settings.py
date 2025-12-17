@@ -14,8 +14,8 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-import pymysql
-pymysql.install_as_MySQLdb()
+# import pymysql
+# pymysql.install_as_MySQLdb()
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,6 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 ENV_PATH = BASE_DIR / ".env"
 
 load_dotenv(ENV_PATH)
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -61,6 +62,9 @@ INSTALLED_APPS = [
 
     ## settings
     'corsheaders',
+
+    ## websocket
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -98,6 +102,7 @@ TEMPLATES = [
 ]
 
 # WSGI_APPLICATION = 'auto_stock.wsgi.application'
+ASGI_APPLICATION = 'auto_stock.asgi.application'
 
 
 # Database
@@ -119,7 +124,7 @@ TEMPLATES = [
 #     }
 # }
 
-# # sqlite
+# sqlite
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.sqlite3',
@@ -143,11 +148,22 @@ DATABASES = {
 }
 
 # Celery
-CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
-CELERY_RESULT_BACKEND = os.getenv("REDIS_URL", "redis://redis:6379/0")
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_TASK_RESULT_EXPIRES = 3600
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
+
+# Channel
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [(REDIS_URL)],
+        },
+    },
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
