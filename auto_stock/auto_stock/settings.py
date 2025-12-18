@@ -21,9 +21,7 @@ pymysql.install_as_MySQLdb()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 ## 환경 변수 로드
-ENV_PATH = BASE_DIR / ".env"
-
-load_dotenv(ENV_PATH)
+load_dotenv()
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -119,28 +117,28 @@ TEMPLATES = [
 #     }
 # }
 
-# # sqlite
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
+# sqlite
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'hb05',
-        'USER': 'django_user',
-        'PASSWORD': 'Soldesk1.',
-        'HOST': '172.16.6.126',
-        'PORT': '3306',
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-            'use_unicode': True,
-        },
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.mysql',
+#        'NAME': 'hb05',
+#        'USER': 'django_user',
+#        'PASSWORD': 'Soldesk1.',
+#        'HOST': '172.16.6.126',
+#        'PORT': '3306',
+#        'OPTIONS': {
+#            'charset': 'utf8mb4',
+#            'use_unicode': True,
+#        },
+#    }
+#}
 
 # Celery
 CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")

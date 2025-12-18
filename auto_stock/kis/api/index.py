@@ -12,7 +12,7 @@ from datetime import date, timedelta
 
 logger = logging.getLogger(__name__)
 
-dotenv.load_dotenv(".env")
+dotenv.load_dotenv()
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "auto_stock.settings")
 django.setup()
 

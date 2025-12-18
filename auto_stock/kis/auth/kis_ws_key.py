@@ -3,7 +3,7 @@ import os
 import redis
 
 from dotenv import load_dotenv
-load_dotenv(dotenv_path=".env")
+load_dotenv()
 
 BASE_URL = os.getenv("BASE_URL_REAL")
 APP_KEY = os.getenv("APP_KEY_REAL")

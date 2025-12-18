@@ -2,7 +2,7 @@ import os, asyncio, json, redis, signal, logging
 import websockets
 import django, dotenv
 
-dotenv.load_dotenv(".env")
+dotenv.load_dotenv()
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "auto_stock.settings")
 django.setup()
 
