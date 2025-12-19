@@ -14,7 +14,7 @@ from kis.data.search_code import mapping_code_to_name
 from kis.websocket.util.kis_data_save import subscribe_and_get_data, get_cached_data
 from kis.constants.const_index import INDEX_CODE_NAME_MAP, OVERSEAS_INDEX_CODE_NAME_MAP
 from kis.api.util.market_time import is_after_market_close
-
+from kis.api.index import get_realtime_index_payload
 
 logger = logging.getLogger(__name__)
 
