@@ -2,62 +2,84 @@ services:
   # Redis
   redis:
     image: redis:7-alpine
-    container_name: auto-redis
+    container_name: redis
     restart: unless-stopped
+  
+  # MariaDB
+  mariadb:
+      image: mariadb:10.6
+      container_name: mariadb
+      environment:
+        MYSQL_ROOT_PASSWORD: Soldesk1.           # 관리자 비번
+        MYSQL_DATABASE: auto_stock_db            # 실제 생성될 DB 이름 (언더바 권장)
+        MYSQL_USER: django_user                  # Django가 쓸 유저
+        MYSQL_PASSWORD: Soldesk1.                # Django가 쓸 비번
+      ports:
+        - "3306:3306"
+      healthcheck:
+        test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "django_user", "--password=Soldesk1."]
+        interval: 5s
+        timeout: 5s
+        retries: 5
 
   # Migration
   migrate:
-    image: auto-stock:test
+    image: auto-stock:latest
     command: ["sh", "-c", "python manage.py makemigrations --noinput && python manage.py migrate --noinput"]
     env_file:
-      - ${HOME}/auto_stock.secret.env
-    environment:
-      REDIS_URL: redis://redis:6379/0
-    profiles: ["ops"]
+      - ${HOME}/auto-stock-secret.env
+      - ${HOME}/auto-stock-configmap.env
+    depends_on:
+      mariadb:
+        condition: service_healthy
 
   # Web Server (Uvicorn)
   web:
     build:
       context: .
-    image: auto-stock:test
-    container_name: auto-stock-web
+    image: auto-stock:latest
+    container_name: web
     env_file:
-      - ${HOME}/auto_stock.secret.env
-    environment:
-      REDIS_URL: redis://redis:6379/0
+      - ${HOME}/auto-stock-secret.env
+      - ${HOME}/auto-stock-configmap.env
     ports:
       - "8000:8000"
     command: ["uvicorn", "auto_stock.asgi:application", "--host", "0.0.0.0", "--port", "8000"]
 
   # Websocket Worker
   websocket:
-    image: auto-stock:test
-    container_name: auto-stock-websocket
+    image: auto-stock:latest
+    container_name: websocket
     restart: unless-stopped
     env_file:
-      - ${HOME}/auto_stock.secret.env
-    environment:
-      REDIS_URL: redis://redis:6379/0
+      - ${HOME}/auto-stock-secret.env
+      - ${HOME}/auto-stock-configmap.env
     command: ["python", "-m", "kis.websocket.util.kis_ws_client"]
 
   # Celery Worker
   celery-worker:
-    image: auto-stock:test
-    container_name: auto-stock-celery-worker
+    image: auto-stock:latest
+    container_name: celery-worker
     restart: unless-stopped
     env_file:
-      - ${HOME}/auto_stock.secret.env
-    environment:
-      REDIS_URL: redis://redis:6379/0
+      - ${HOME}/auto-stock-secret.env
+      - ${HOME}/auto-stock-configmap.env
     command: ["celery", "-A", "auto_stock", "worker", "-l", "info"]
+    # database 의존성 추가
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
   # Celery Beat
   celery-beat:
-    image: auto-stock:test
-    container_name: auto-stock-celery-beat
+    image: auto-stock:latest
+    container_name: celery-beat
     restart: unless-stopped
     env_file:
-      - ${HOME}/auto_stock.secret.env
-    environment:
-      REDIS_URL: redis://redis:6379/0
+      - ${HOME}/auto-stock-secret.env
+      - ${HOME}/auto-stock-configmap.env
     command: ["celery", "-A", "auto_stock", "beat", "-l", "info"]
+
+
