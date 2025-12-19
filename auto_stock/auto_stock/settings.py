@@ -22,11 +22,10 @@ pymysql.install_as_MySQLdb()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 ## 환경 변수 로드
-ENV_PATH = BASE_DIR / ".env"
-
-load_dotenv(ENV_PATH)
+load_dotenv()
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
-
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -125,18 +124,16 @@ ASGI_APPLICATION = 'auto_stock.asgi.application'
 #     }
 # }
 
-# sqlite
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'hb05',
-        'USER': 'django_user',
-        'PASSWORD': 'Soldesk1.',
-        'HOST': 'mariadb',
-        'PORT': '3306',
+        'NAME': 'auto_stock_db',        
+        'USER': 'django_user',           
+        'PASSWORD': 'Soldesk1.',        
+        'HOST': DB_HOST,
+        'PORT': DB_PORT,
         'OPTIONS': {
             'charset': 'utf8mb4',
-            'use_unicode': True,
         },
     }
 }
