@@ -24,6 +24,3 @@ WORKDIR /app/auto_stock
 
 # Entrypoint
 ENTRYPOINT ["/entrypoint.sh"]
-
-# Default Command
-CMD ["uvicorn", "auto_stock.asgi:application", "--host", "0.0.0.0", "--port", "8000"]
