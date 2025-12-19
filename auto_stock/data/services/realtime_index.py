@@ -18,13 +18,8 @@ from kis.api.util.market_time import is_after_market_close
 
 logger = logging.getLogger(__name__)
 
-
+# Index Payload
 def get_realtime_index_payload() -> dict:
-    """
-    RealtimeIndexView에서 사용하던
-    WebSocket + Redis + REST fallback 지수 조회 로직
-    → HTTP / WS 공용 함수
-    """
     tr_id = os.getenv("INDEX_REALTIME_TR_ID")
     results = []
 
