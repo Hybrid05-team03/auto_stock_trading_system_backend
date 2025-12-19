@@ -39,6 +39,7 @@ class IndicesConsumer(AsyncJsonWebsocketConsumer):
                 pass
 
     async def _push_loop(self):
+        last = None
         while True:
             try:
                 await asyncio.sleep(self._interval)
