@@ -15,12 +15,10 @@ COPY . /app
 RUN chgrp -R 0 /app && \
     chmod -R g=u /app
 
-# Entrypoint
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 # Working directory
 WORKDIR /app/auto_stock
 
-# Entrypoint
-ENTRYPOINT ["/entrypoint.sh"]
+## Entrypoint
+# COPY entrypoint.sh /entrypoint.sh
+# RUN chmod +x /entrypoint.sh
+# ENTRYPOINT ["/entrypoint.sh"]
