@@ -12,6 +12,7 @@ def get_realtime_stock_payload(codes: list) -> dict:
 
     for code in codes:
         # 데이터 수집 (WebSocket/Redis 캐시)
+        market_cap = kis_get_market_cap(code)
         if is_market_open:
             data = subscribe_and_get_data(tr_id, code, "price", timeout=3)
         else:
@@ -23,9 +24,10 @@ def get_realtime_stock_payload(codes: list) -> dict:
             results.append({
                 "name": stock_name,
                 "code": code,
-                "currentPrice": data.get("current_price"),
-                "changePercent": data.get("change_rate"),
-                "volume": data.get("trade_value"),
+                "currentPrice": str(data.get("current_price", "0")),
+                "changePercent": str(data.get("change_rate", "0")),
+                "volume": str(data.get("trade_value", "0")),
+                "price": str(market_cap),
             })
         else:
             # REST Fallback
@@ -33,9 +35,10 @@ def get_realtime_stock_payload(codes: list) -> dict:
             results.append({
                 "name": stock_name,
                 "code": code,
-                "currentPrice": rest_price if rest_price else 0,
+                "currentPrice": str(rest_price) if rest_price else "0",
                 "changePercent": "0",
                 "volume": "0",
+                "price": str(market_cap),
             })
 
-    return {"stock": results}
+    return results

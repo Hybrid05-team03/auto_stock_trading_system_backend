@@ -1,4 +1,4 @@
-import asyncio, os, logging
+import asyncio, os, logging, json
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from asgiref.sync import sync_to_async
 
@@ -23,13 +23,17 @@ class BaseMarketConsumer(AsyncJsonWebsocketConsumer):
             except asyncio.CancelledError:
                 pass
         logger.info(f"WebSocket Disconnected: {self.scope['path']}")
+    # JSON Encoding
+    @classmethod
+    async def encode_json(cls, content):
+        return json.dumps(content, ensure_ascii=False)
 
 # Indices
 class IndicesConsumer(BaseMarketConsumer):
     async def connect(self):
         await self.accept()
         payload = await sync_to_async(get_realtime_index_payload)()
-        await self.send_json({"type": "snapshot", "data": payload})
+        await self.send_json(payload)
         self._task = asyncio.create_task(self._push_loop())
 
     async def _push_loop(self):
@@ -37,7 +41,8 @@ class IndicesConsumer(BaseMarketConsumer):
             while True:
                 await asyncio.sleep(5)
                 payload = await sync_to_async(get_realtime_index_payload)()
-                await self.send_json({"type": "update", "data": payload})
+                if payload["indices"]:
+                    await self.send_json(payload)
         except asyncio.CancelledError:
             pass # 정상 종료
 
@@ -46,7 +51,9 @@ class RankConsumer(BaseMarketConsumer):
     async def connect(self):
         await self.accept()
         payload = await sync_to_async(get_popular_rank_payload)()
-        await self.send_json({"type": "snapshot", "data": payload})
+        await self.send_json({
+            "rank": payload.get("rank", [])
+        })
         self._task = asyncio.create_task(self._push_loop())
 
     async def _push_loop(self):
@@ -54,24 +61,39 @@ class RankConsumer(BaseMarketConsumer):
             while True:
                 await asyncio.sleep(30)
                 payload = await sync_to_async(get_popular_rank_payload)()
-                await self.send_json({"type": "update", "data": payload})
+                await self.send_json({
+                    "rank": payload.get("rank", [])
+                })
         except asyncio.CancelledError:
             pass
 
 # Stock price
 class StockPriceConsumer(BaseMarketConsumer):
     async def connect(self):
+        # Read Parameters
+        codes_str = self.scope['url_route']['kwargs'].get('codes', "")
+        
+        if not codes_str:
+            await self.close()
+            return
+
         await self.accept()
-        self.target_codes = ["005930", "000660"]
+
+        # Parse Parameters
+        self.target_codes = [c.strip() for c in codes_str.split(",") if c.strip()]
+        
+        # Send Data
         payload = await sync_to_async(get_realtime_stock_payload)(self.target_codes)
-        await self.send_json({"type": "snapshot", "data": payload})
+        await self.send_json(payload)        
         self._task = asyncio.create_task(self._push_loop())
 
     async def _push_loop(self):
         try:
             while True:
-                await asyncio.sleep(3)
+                await asyncio.sleep(5)
+
+                # Update Data
                 payload = await sync_to_async(get_realtime_stock_payload)(self.target_codes)
-                await self.send_json({"type": "update", "data": payload})
+                await self.send_json(payload)
         except asyncio.CancelledError:
             pass
