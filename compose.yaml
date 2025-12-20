@@ -24,6 +24,7 @@ services:
 
   # Migration
   migrate:
+    build: .
     image: auto-stock:latest
     command: ["sh", "-c", "python manage.py makemigrations --noinput && python manage.py migrate --noinput"]
     env_file:
@@ -48,6 +49,7 @@ services:
 
   # Websocket Worker
   websocket:
+    build: .
     image: auto-stock:latest
     container_name: websocket
     restart: unless-stopped
@@ -58,6 +60,7 @@ services:
 
   # Celery Worker
   celery-worker:
+    build: .
     image: auto-stock:latest
     container_name: celery-worker
     restart: unless-stopped
@@ -74,6 +77,7 @@ services:
 
   # Celery Beat
   celery-beat:
+    build: .
     image: auto-stock:latest
     container_name: celery-beat
     restart: unless-stopped
