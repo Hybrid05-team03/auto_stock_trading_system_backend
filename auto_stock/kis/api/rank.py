@@ -22,12 +22,12 @@ def fetch_top10_symbols(count:int):
     data = request_get(path, tr_id, params)
     output = data.get("output", [])
     result = [
-        {
-            "code": item["mksc_shrn_iscd"],
-            "name": item["hts_kor_isnm"]
-            # "market_cap": int(item["stck_avls"]) # 시가총액
-        }
-        for item in output[:count]
-    ]
+            {
+                "rank": i + 1,  # 순위 추가 (1부터 시작)
+                "code": item["mksc_shrn_iscd"],
+                "name": item["hts_kor_isnm"]
+            }
+            for i, item in enumerate(output[:count])
+        ]
 
     return result
