@@ -26,6 +26,10 @@ load_dotenv()
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -127,9 +131,9 @@ ASGI_APPLICATION = 'auto_stock.asgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'auto_stock_db',        
-        'USER': 'django_user',           
-        'PASSWORD': 'Soldesk1.',        
+        'NAME': DB_NAME,        
+        'USER': DB_USER,           
+        'PASSWORD': DB_PASSWORD,        
         'HOST': DB_HOST,
         'PORT': DB_PORT,
         'OPTIONS': {
