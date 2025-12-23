@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from kis.auth.kis_token import get_token
 from kis.api.price import fetch_price_series, get_or_set_index_yesterday
 from kis.api.index import fetch_overseas_index_snapshot, fetch_domestic_index_snapshot
-from kis.api.quote import kis_get_market_cap, kis_get_price_rest
+from kis.api.quote import kis_get_price_snapshot
 from kis.api.rank import fetch_top10_symbols
 from kis.data.search_code import mapping_code_to_name
 from kis.websocket.util.kis_data_save import subscribe_and_get_data, get_cached_data
