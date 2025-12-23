@@ -26,7 +26,7 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 # ------------------ 글로벌 상태 ------------------
 stop_event = asyncio.Event()
@@ -82,13 +82,13 @@ async def subscribe_worker(tr_id, tr_key, redis_key_prefix):
 
     # 구독 요청 -> send_queue & subscriptions dict 등록
     key = (tr_id, tr_key)
-
+    logging.debug(f"[SUB] 구독 요청 → {key}")
     if key in subscriptions:
         logger.info(f"[WARN] 이미 등록된 구독: {key}")
         return
 
     subscriptions[key] = redis_key_prefix
-
+    logging.debug(f"[SUB] 구독 등록 → {key}")
     await send_queue.put({
         "tr_id": tr_id,
         "tr_key": tr_key,
@@ -175,9 +175,10 @@ async def ws_send_loop(approval_key):
     global shared_ws
 
     while not stop_event.is_set():
+        logging.debug("[WS] 송신 루프 시작")
         try:
             data = await send_queue.get()
-
+            logging.debug(f"[WS] send message → {data}")
             msg = {
                 "header": {
                     "approval_key": approval_key,
@@ -192,7 +193,7 @@ async def ws_send_loop(approval_key):
                     }
                 }
             }
-
+            logging.debug(f"[WS] send message → {json.dumps(msg)}")
             await shared_ws.send(json.dumps(msg))
             logger.info(f"[WS] 구독 전송 → {data['tr_id']} / {data['tr_key']}")
 
