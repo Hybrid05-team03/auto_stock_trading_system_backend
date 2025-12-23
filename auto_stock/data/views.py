@@ -47,19 +47,37 @@ class DailyPriceView(APIView):
 # 실시간 시세 조회 (WebSocket → Redis)
 class RealtimeQuoteView(APIView):
     def get(self, request):
+        logger.debug("[RealtimeQuoteView - get]")
+
         raw_codes = request.query_params.get("codes", "")
+        logger.debug(f"[RealtimeQuoteView - get] raw codes 파라미터: {raw_codes}")
+
         codes = [c.strip() for c in raw_codes.split(",") if c.strip()]
+        logger.debug(f"[RealtimeQuoteView - get] 파싱된 codes: {codes}")
 
         if not codes:
+            logger.debug("[RealtimeQuoteView - get] codes 없음 → 400 반환")
             return Response({"detail": "codes is required"}, status=400)
+
+        logger.debug("[RealtimeQuoteView - get] get_realtime_stock_payload 호출 전")
         payload = get_realtime_stock_payload(codes)
+        logger.debug("[RealtimeQuoteView - get] get_realtime_stock_payload 호출 후")
+
+        logger.debug("[RealtimeQuoteView - get] payload 생성 완료")
+        logger.debug("[RealtimeQuoteView - get] 종료")
         return Response(payload, status=200)
 
 
 # 실시간 지수 조회 (WebSocket + REST)
 class RealtimeIndexView(APIView):
     def get(self, request):
+        logger.debug("[RealtimeIndexView - get]")
+
+        logger.debug("[RealtimeIndexView - get] get_realtime_index_payload 호출 전")
         payload = get_realtime_index_payload()
+        logger.debug("[RealtimeIndexView - get] get_realtime_index_payload 호출 후")
+
+        logger.debug("[RealtimeIndexView - get] 종료")
         return Response(payload, status=200)
 
 
@@ -67,5 +85,11 @@ class RealtimeIndexView(APIView):
 # 인기 종목 조회
 class PopularStockRankingView(APIView):
     def get(self, request):
+        logger.debug("[PopularStockRankingView - get]")
+
+        logger.debug("[PopularStockRankingView - get] get_popular_rank_payload 호출 전")
         payload = get_popular_rank_payload()
+        logger.debug("[PopularStockRankingView - get] get_popular_rank_payload 호출 후")
+
+        logger.debug("[PopularStockRankingView - get] 종료")
         return Response(payload, status=200)
