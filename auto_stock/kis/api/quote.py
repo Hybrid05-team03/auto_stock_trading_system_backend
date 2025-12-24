@@ -32,12 +32,10 @@ def kis_get_last_quote(symbol: str, count: int = 100) -> pd.DataFrame:
     return df[["date", "close"]].tail(count)
 
 
-def kis_get_price_rest(symbol: str) -> float:
-    """
-    REST: 단일 현재가 조회 (WS 실패 시 backup)
-    """
+def kis_get_price_snapshot(symbol: str) -> dict:
     path = "/uapi/domestic-stock/v1/quotations/inquire-price"
     tr_id = os.getenv("PRICE_TR_ID")
+
     params = {
         "FID_COND_MRKT_DIV_CODE": "J",
         "FID_INPUT_ISCD": symbol,
@@ -45,24 +43,22 @@ def kis_get_price_rest(symbol: str) -> float:
 
     try:
         res = request_get(path, tr_id, params)
-        price = res.get("output", {}).get("stck_prpr")
-        return float(price) if price else np.nan
-    except:
-        return np.nan
+        output = res.get("output", {})
 
+        def _f(v):
+            try:
+                return float(v)
+            except:
+                return np.nan
 
-## 시가 총액 조회
-def kis_get_market_cap(symbol: str) -> float:
-    path = "/uapi/domestic-stock/v1/quotations/inquire-price"
-    tr_id = os.getenv("PRICE_TR_ID")
-    params = {
-        "FID_COND_MRKT_DIV_CODE": "J",
-        "FID_INPUT_ISCD": symbol,
-    }
+        return {
+            "price": _f(output.get("stck_prpr")),
+            "market_cap": _f(output.get("hts_avls")),
+            "volume": _f(output.get("acml_vol")),
+            "change": _f(output.get("prdy_vrss")),
+            "change_rate": _f(output.get("prdy_ctrt")),
+        }
 
-    try:
-        res = request_get(path, tr_id, params)
-        price = res.get("output", {}).get("hts_avls")
-        return float(price) if price else np.nan
-    except:
-        return np.nan
+    except Exception as e:
+        logger.warning(f"[KIS] price snapshot failed ({symbol}): {e}")
+        return {}
