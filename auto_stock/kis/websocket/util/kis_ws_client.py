@@ -25,9 +25,13 @@ REDIS_CHANNEL = "subscribe.add"
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    force=True  # 기존 로깅 설정을 덮어씁니다 (Python 3.8+)
+)
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
-logging.basicConfig(level=logging.DEBUG)
+logger.setLevel(logging.DEBUG)
 
 # ------------------ 글로벌 상태 ------------------
 stop_event = asyncio.Event()
@@ -108,10 +112,8 @@ async def ws_recv_loop():
     while not stop_event.is_set():
         try:
             raw = await asyncio.wait_for(shared_ws.recv(), timeout=10)
-            print("\n================ RAW FRAME ================")
-            print(raw)
-            print("===========================================\n")
-
+            logger.debug(f"==== RAW FRAME ====\n{raw}\n====================")
+            
             # JSON 메시지 처리
             try:
                 obj = json.loads(raw)
