@@ -113,7 +113,7 @@ async def ws_recv_loop():
         try:
             raw = await asyncio.wait_for(shared_ws.recv(), timeout=10)
             logger.debug(f"==== RAW FRAME ====\n{raw}\n====================")
-            
+
             # JSON 메시지 처리
             try:
                 obj = json.loads(raw)
@@ -201,7 +201,6 @@ async def ws_send_loop(approval_key):
             logging.debug(f"[WS] send message → {json.dumps(msg)}")
             await shared_ws.send(json.dumps(msg))
             logger.info(f"[WS] 구독 전송 → {data['tr_id']} / {data['tr_key']}")
-            print(msg)
         except Exception as e:
             logger.error(f"[WS] 구독 전송 실패: {e}")
 
@@ -232,8 +231,10 @@ async def redis_subscribe_listener():
 # ------------------ WebSocket 단일 연결 관리 ------------------
 async def main_websocket():
     global shared_ws
-
-    approval_key = get_web_socket_key()
+    
+    # 최초 연결시 강제 갱신 
+    approval_key = get_web_socket_key(force_refresh=True)
+    logger.info(f"[WS] 새 approval_key 획득: {approval_key}")
     async with websockets.connect(WS_BASE_URL_REAL) as ws:
         shared_ws = ws
         logger.info("[WS] 연결 완료")
