@@ -83,18 +83,19 @@ async def subscribe_worker(tr_id, tr_key, redis_key_prefix):
 
     # 구독 요청 -> send_queue & subscriptions dict 등록
     key = (tr_id, tr_key)
-    logging.debug(f"[SUB] 구독 요청 → {key}")
+    logger.debug(f"[SUB] 구독 요청 → {key}")
     if key in subscriptions:
         logger.info(f"[WARN] 이미 등록된 구독: {key}")
         return
 
     subscriptions[key] = redis_key_prefix
+    logger.debug(f"[SUB] 구독 요청 → {redis_key_prefix}:{tr_key}")
     payload = {
         "tr_id": tr_id,
         "tr_key": tr_key,
         "redis_prefix": redis_key_prefix
     }
-    logging.debug(f"[ SUBSCRIBE ] 구독 요청 body → {payload}")
+    logger.debug(f"[ SUBSCRIBE ] 구독 요청 body → {payload}")
     await send_queue.put(payload)
 
     logger.info(f"[ QUEUE ] 구독 요청 큐 등록 → {redis_key_prefix}:{tr_key}")
