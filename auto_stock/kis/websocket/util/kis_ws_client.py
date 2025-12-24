@@ -26,7 +26,7 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 # ------------------ 글로벌 상태 ------------------
 stop_event = asyncio.Event()
@@ -88,12 +88,13 @@ async def subscribe_worker(tr_id, tr_key, redis_key_prefix):
         return
 
     subscriptions[key] = redis_key_prefix
-
-    await send_queue.put({
+    payload = {
         "tr_id": tr_id,
         "tr_key": tr_key,
         "redis_prefix": redis_key_prefix
-    })
+    }
+    logging.debug(f"[ SUBSCRIBE ] 구독 요청 body → {payload}")
+    await send_queue.put(payload)
 
     logger.info(f"[ QUEUE ] 구독 요청 큐 등록 → {redis_key_prefix}:{tr_key}")
 
@@ -195,7 +196,7 @@ async def ws_send_loop(approval_key):
 
             await shared_ws.send(json.dumps(msg))
             logger.info(f"[WS] 구독 전송 → {data['tr_id']} / {data['tr_key']}")
-
+            print(msg)
         except Exception as e:
             logger.error(f"[WS] 구독 전송 실패: {e}")
 
