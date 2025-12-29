@@ -7,7 +7,8 @@ APP_SECRET = os.getenv("APP_SECRET")
 HTS_ID_KEY = "kis_hts_id_key"
 TTL = 23 * 3600   # 23시간 TTL
 
-r = redis.Redis(decode_responses=True)
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)

@@ -18,12 +18,17 @@ import pymysql
 pymysql.install_as_MySQLdb()
 
 
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 ## 환경 변수 로드
-ENV_PATH = BASE_DIR / ".env"
-
-load_dotenv(ENV_PATH)
+load_dotenv()
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -61,6 +66,9 @@ INSTALLED_APPS = [
 
     ## settings
     'corsheaders',
+
+    ## websocket
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -98,6 +106,7 @@ TEMPLATES = [
 ]
 
 # WSGI_APPLICATION = 'auto_stock.wsgi.application'
+ASGI_APPLICATION = 'auto_stock.asgi.application'
 
 
 # Database
@@ -122,24 +131,34 @@ TEMPLATES = [
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'hb05',
-        'USER': 'django_user',
-        'PASSWORD': 'Soldesk1.',
-        'HOST': '172.16.6.126',
-        'PORT': '3306',
+        'NAME': DB_NAME,        
+        'USER': DB_USER,           
+        'PASSWORD': DB_PASSWORD,        
+        'HOST': DB_HOST,
+        'PORT': DB_PORT,
         'OPTIONS': {
             'charset': 'utf8mb4',
-            'use_unicode': True,
         },
     }
 }
 
 # Celery
-CELERY_BROKER_URL = "redis://localhost:6379/0"
-CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_TASK_RESULT_EXPIRES = 3600
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
+
+# Channel
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_URL],
+        },
+    },
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

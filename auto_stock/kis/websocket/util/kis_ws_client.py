@@ -22,9 +22,16 @@ CUST_TYPE = os.getenv("CUST_TYPE")
 REDIS_TTL = 60 * 60 * 18
 REDIS_CHANNEL = "subscribe.add"
 
-r = redis.Redis(decode_responses=True)
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    force=True  # 기존 로깅 설정을 덮어씁니다 (Python 3.8+)
+)
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 # ------------------ 글로벌 상태 ------------------
 stop_event = asyncio.Event()
@@ -80,18 +87,20 @@ async def subscribe_worker(tr_id, tr_key, redis_key_prefix):
 
     # 구독 요청 -> send_queue & subscriptions dict 등록
     key = (tr_id, tr_key)
-
+    logger.debug(f"[SUB] 구독 요청 → {key}")
     if key in subscriptions:
         logger.info(f"[WARN] 이미 등록된 구독: {key}")
         return
 
     subscriptions[key] = redis_key_prefix
-
-    await send_queue.put({
+    logger.debug(f"[SUB] 구독 요청 → {redis_key_prefix}:{tr_key}")
+    payload = {
         "tr_id": tr_id,
         "tr_key": tr_key,
         "redis_prefix": redis_key_prefix
-    })
+    }
+    logger.debug(f"[ SUBSCRIBE ] 구독 요청 body → {payload}")
+    await send_queue.put(payload)
 
     logger.info(f"[ QUEUE ] 구독 요청 큐 등록 → {redis_key_prefix}:{tr_key}")
 
@@ -103,9 +112,7 @@ async def ws_recv_loop():
     while not stop_event.is_set():
         try:
             raw = await asyncio.wait_for(shared_ws.recv(), timeout=10)
-            print("\n================ RAW FRAME ================")
-            print(raw)
-            print("===========================================\n")
+            logger.debug(f"==== RAW FRAME ====\n{raw}\n====================")
 
             # JSON 메시지 처리
             try:
@@ -173,9 +180,10 @@ async def ws_send_loop(approval_key):
     global shared_ws
 
     while not stop_event.is_set():
+        logging.debug("[WS] 송신 루프 시작")
         try:
             data = await send_queue.get()
-
+            logging.debug(f"[WS] send message → {data}")
             msg = {
                 "header": {
                     "approval_key": approval_key,
@@ -190,10 +198,9 @@ async def ws_send_loop(approval_key):
                     }
                 }
             }
-
+            logging.debug(f"[WS] send message → {json.dumps(msg)}")
             await shared_ws.send(json.dumps(msg))
             logger.info(f"[WS] 구독 전송 → {data['tr_id']} / {data['tr_key']}")
-
         except Exception as e:
             logger.error(f"[WS] 구독 전송 실패: {e}")
 
@@ -224,8 +231,10 @@ async def redis_subscribe_listener():
 # ------------------ WebSocket 단일 연결 관리 ------------------
 async def main_websocket():
     global shared_ws
-
-    approval_key = get_web_socket_key()
+    
+    # 최초 연결시 강제 갱신 
+    approval_key = get_web_socket_key(force_refresh=True)
+    logger.info(f"[WS] 새 approval_key 획득: {approval_key}")
     async with websockets.connect(WS_BASE_URL_REAL) as ws:
         shared_ws = ws
         logger.info("[WS] 연결 완료")

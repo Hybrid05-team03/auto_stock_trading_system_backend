@@ -5,7 +5,8 @@ from datetime import date
 from kis.api.index import kis_get_index_last2
 from redis import Redis
 
-r = Redis(decode_responses=True)
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 def get_cached_yesterday(code: str) -> float | None:
     key = f"index:yesterday:{code}"

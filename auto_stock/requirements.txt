@@ -55,3 +55,5 @@ websockets==15.0.1
 whitenoise==6.11.0
 zope.event==6.0
 zope.interface==8.0.1
+channels==4.0.0
+channels-redis==4.2.1

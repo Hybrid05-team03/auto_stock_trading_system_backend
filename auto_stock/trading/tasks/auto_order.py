@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 tr_id = os.getenv("ORDER_EXECUTION_TR_ID")
 ## TODO DB에서 직접 불러와 사용하도록 수정
 hts_id_key = os.getenv("HTS_ID")
-r = redis.Redis(decode_responses=True)
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 ## celery -A auto_stock worker -l info
 @app.task
