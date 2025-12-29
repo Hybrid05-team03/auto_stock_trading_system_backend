@@ -87,13 +87,11 @@ async def subscribe_worker(tr_id, tr_key, redis_key_prefix):
 
     # 구독 요청 -> send_queue & subscriptions dict 등록
     key = (tr_id, tr_key)
-    logger.debug(f"[SUB] 구독 요청 → {key}")
     if key in subscriptions:
-        logger.info(f"[WARN] 이미 등록된 구독: {key}")
+        logger.debug(f"[SUB] 이미 등록된 구독 -> SKIP: {key}")
         return
 
     subscriptions[key] = redis_key_prefix
-    logger.debug(f"[SUB] 구독 요청 → {redis_key_prefix}:{tr_key}")
     payload = {
         "tr_id": tr_id,
         "tr_key": tr_key,
@@ -234,7 +232,7 @@ async def main_websocket():
     
     # 최초 연결시 강제 갱신 
     approval_key = get_web_socket_key(force_refresh=True)
-    logger.info(f"[WS] 새 approval_key 획득: {approval_key}")
+    logger.debug(f"[WS] 새 approval_key 획득: {approval_key}")
     async with websockets.connect(WS_BASE_URL_REAL) as ws:
         shared_ws = ws
         logger.info("[WS] 연결 완료")

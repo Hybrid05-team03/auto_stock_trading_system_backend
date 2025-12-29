@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-
+from datetime import timedelta
 import pymysql
 pymysql.install_as_MySQLdb()
 
@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'trading',
     'kis',
     'data',
+    'accounts',
 
     ## settings
     'corsheaders',
@@ -109,38 +110,51 @@ TEMPLATES = [
 ASGI_APPLICATION = 'auto_stock.asgi.application'
 
 
+# JWT 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# # 로컬 환경 데이터베이스
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'hb05',
-#         'USER': 'django_user',
-#         'PASSWORD': '1234!',
-#         'HOST': '127.0.0.1',
-#         'PORT': '3306',
-#         'OPTIONS': {
-#             'charset': 'utf8mb4',
-#             'use_unicode': True,
-#         },
-#     }
-# }
-
+# 로컬 환경 데이터베이스
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': DB_NAME,        
-        'USER': DB_USER,           
-        'PASSWORD': DB_PASSWORD,        
-        'HOST': DB_HOST,
-        'PORT': DB_PORT,
+        'NAME': 'hb05',
+        'USER': 'root',
+        'PASSWORD': 'Soldesk1.',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
         'OPTIONS': {
             'charset': 'utf8mb4',
+            'use_unicode': True,
         },
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': DB_NAME,        
+#         'USER': DB_USER,           
+#         'PASSWORD': DB_PASSWORD,        
+#         'HOST': DB_HOST,
+#         'PORT': DB_PORT,
+#         'OPTIONS': {
+#             'charset': 'utf8mb4',
+#         },
+#     }
+# }
 
 # Celery
 CELERY_BROKER_URL = REDIS_URL

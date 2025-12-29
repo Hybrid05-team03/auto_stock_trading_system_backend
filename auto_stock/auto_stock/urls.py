@@ -6,6 +6,9 @@ urlpatterns = [
     # (관리자) admin
     path('admin/', admin.site.urls),
 
+    # (사용자) accounts
+    path('accounts/', include('accounts.urls')),
+
     # (개발용) 한투 API 테스트
     path('api/data/', include('data.urls')),
 
