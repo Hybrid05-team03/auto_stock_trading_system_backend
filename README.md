@@ -65,13 +65,14 @@ https://hb05-infra.notion.site/API-2a402d82d9c380079068ef2ca8b6fc2e?source=copy_
     auto_stock/                       # 프로젝트 루트
     ├── .env                          # 환경 변수 파일
     ├── auto_stock/                   # Django 프로젝트 설정
+    ├── accounts/                     # 사용자 계정 관리 및 처리
     ├── common/                       # Swagger 및 공통 설정
-    ├── kis/                          # KIS 통신 모듈
-    │   ├── api/                      # REST API 요청
-    │   ├── auth/                     # 토큰 발급
+    ├── kis/                          # KIS 통신 처리
+    │   ├── api/                      # REST 요청
+    │   ├── auth/                     # KIS 토큰 발급
     │   ├── constants/                # 상수 정의
-    │   ├── data/                     # 종목 코드 파일
-    │   └── websocket/                # WebSocket 모듈
+    │   ├── data/                     # 주식 종목 코드 파일
+    │   └── websocket/                # WebSocket 요청 처리 
     ├── kis_test/                     # 테스트용 KIS 클라이언트
     └── trading/                      # 자동 매매 전략/처리
     ```
